@@ -5,11 +5,12 @@
   "portsAttributes": {
     "8200": {
       "label": "사업구상 분석 앱",
-      "onAutoForward": "openBrowser"
+      "onAutoForward": "openBrowser",
+      "visibility": "public"
     }
   },
   "postCreateCommand": "pip install -r requirements.txt",
-  "postStartCommand": "[ -f .env ] || echo 'ANTHROPIC_API_KEY=' > .env",
+  "postStartCommand": "nohup python web.py > /tmp/app.log 2>&1 &",
   "customizations": {
     "vscode": {
       "extensions": ["ms-python.python"]

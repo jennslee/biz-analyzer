@@ -27,6 +27,11 @@ def _load_env():
 
 _load_env()
 
+if not os.environ.get("ANTHROPIC_API_KEY"):
+    print("⚠️  ANTHROPIC_API_KEY 환경변수가 없습니다.")
+    print("   Codespaces: github.com/settings/codespaces 에서 Secret 등록 후 Codespace 재시작")
+    print("   로컬: .env 파일에 ANTHROPIC_API_KEY=sk-ant-... 추가")
+
 # ── History DB ────────────────────────────────────────────────────────────────
 DB_PATH = os.path.join(os.path.dirname(__file__), "history.db")
 
