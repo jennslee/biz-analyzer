@@ -1230,6 +1230,20 @@ function robustInvestment(secLines, fullText){
   })
   return scores.some(s=>s>0)?scores:null
 }
+function extractInvestAfter(lines){
+  const KEYS=['시장성','확장성','수익성','방어력','글로벌','AI위험','매력도']
+  for(const l of lines){
+    const m=l.match(/\[INVEST_AFTER:\s*([^\]]+)\]/)
+    if(m){
+      const vals={}
+      m[1].split(',').forEach(kv=>{const [k,v]=kv.trim().split('='); if(k&&v) vals[k.trim()]=parseFloat(v)||0})
+      const arr=KEYS.map(k=>vals[k]||0)
+      if(arr.some(v=>v>0)) return arr
+    }
+  }
+  return null
+}
+
 function robustDifficulty(secLines, fullText){
   let v=extractDifficulty(secLines); if(v) return v
   v=extractDifficulty(fullText.split('\n')); if(v) return v
@@ -1381,12 +1395,15 @@ function buildPitchSlides(text, idea){
 
   // I. Investment (섹션11)
   const inv=robustInvestment(get(11), text)
+  const invAfter=extractInvestAfter(get(11))||extractInvestAfter(text.split('\n'))
+              ||(inv||[]).map(v=>Math.min(10,v+2))
   const s11groups=pByHeading(get(11))
   contentSlides.push({type:'investment',
     tag:'Investment Attractiveness', tagColor:'#34d399',
     title:'투자 매력도',
     labels:['시장성','확장성','수익성','방어력','글로벌','AI위험','매력도'],
     values: inv||[0,0,0,0,0,0,0],
+    afterValues: invAfter,
     colors:['#34d399','#22d3ee','#818cf8','#a78bfa','#22d3ee','#f87171','#fbbf24'],
     groups: s11groups.slice(0,2),
     bullets: pLines(get(11)).slice(0,5)
@@ -1410,14 +1427,23 @@ function buildPitchSlides(text, idea){
   // K. VC (섹션15)
   const diffVals=robustDifficulty(get(7), text)
   const s15groups=pByHeading(get(15))
+  const s15lines=pLines(get(15))
+  const vc_thesis=s15groups.find(g=>/투자 명제|thesis|investment/i.test(g.heading))
+  const vc_whynow=s15groups.find(g=>/why now|타이밍|지금/i.test(g.heading))
+  const vc_moat=s15groups.find(g=>/해자|moat|장벽/i.test(g.heading))
+  const vc_verdict=s15groups.find(g=>/원라이너|verdict|평가/i.test(g.heading))
+  const vc_milestone=pTable(get(15))
+  const vc_roi=s15groups.find(g=>/10x|roi|수익 가능|멀티플/i.test(g.heading))
   contentSlides.push({type:'vc',
     tag:'VC Perspective', tagColor:'#818cf8',
     title:'VC 투자자 심사',
     labels:['개발','시장진입','마케팅','자본','경쟁'],
     values: diffVals||[0,0,0,0,0],
     colors:['#818cf8','#f87171','#a78bfa','#fbbf24','#f87171'],
-    groups: s15groups.slice(0,3),
-    bullets: pLines(get(15)).slice(0,5)
+    groups: s15groups,
+    thesis: vc_thesis, whynow: vc_whynow, moat: vc_moat,
+    verdict: vc_verdict, milestone: vc_milestone, roi: vc_roi,
+    bullets: s15lines.slice(0,5)
   })
 
   // Title + TOC
@@ -1811,31 +1837,50 @@ function renderPitchSlide(slide, idx, total){
   // ── Investment ──
   if(slide.type==='investment'){
     const vals=slide.values||[]
-    const total10=vals.reduce((a,b)=>a+b,0)
-    const avg=(total10/vals.length).toFixed(1)
+    const after=slide.afterValues||vals.map(v=>Math.min(10,v+2))
+    const avg=(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1)
+    const avgAfter=(after.reduce((a,b)=>a+b,0)/after.length).toFixed(1)
     const grp=slide.groups||[]
+    const gain=vals.some(v=>v>0)?(parseFloat(avgAfter)-parseFloat(avg)).toFixed(1):null
     return `<div class="pitch-slide">
       <div class="ps-accent-bar" style="background:${accent}"></div>
-      <div class="ps-header">
+      <div class="ps-header" style="padding-bottom:8px">
         <div class="ps-tag" style="color:${tc}">${dot}${slide.tag}</div>
         <div class="ps-h1">${esc(slide.title)}</div>
-        ${total10>0?`<div class="ps-sub">종합점수 <strong style="color:#34d399;font-size:16px">${avg}</strong>/10 · ${vals.filter(v=>v>=8).length}개 항목 최우수</div>`:''}
+        ${vals.some(v=>v>0)?`<div class="ps-sub" style="display:flex;align-items:center;gap:12px">
+          <span>현재 평균 <strong style="color:#818cf8;font-size:15px">${avg}</strong>/10</span>
+          <span style="color:#4b5563">→</span>
+          <span>투자 후 예상 <strong style="color:#34d399;font-size:15px">${avgAfter}</strong>/10</span>
+          ${gain?`<span style="font-size:10px;padding:2px 8px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);border-radius:5px;color:#34d399">+${gain} upside</span>`:''}
+        </div>`:''}
       </div>
       <div class="ps-body">
         <div class="ps-col ps-col-55">
-          <div style="display:flex;flex-direction:column;gap:9px">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div style="display:flex;justify-content:flex-end;gap:12px;font-size:9px;color:#4b5563;padding-right:4px;margin-bottom:2px">
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:rgba(255,255,255,.15);display:inline-block"></span>현재</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:#34d39966;display:inline-block"></span>투자 후</span>
+            </div>
             ${(slide.labels||[]).map((l,i)=>{
-              const v=vals[i]||0
+              const v=vals[i]||0; const a=after[i]||0
               const c=slide.colors?.[i]||'#818cf8'
               const badge=v>=9?'🔥':v>=8?'⭐':v>=7?'✓':''
               return `<div class="ps-score-row">
                 <div class="ps-score-label">${l}</div>
-                <div class="ps-score-track"><div class="ps-score-fill" style="width:${v*10}%;background:${c}"></div></div>
-                <div class="ps-score-val" style="color:${c};font-size:12px">${v}${badge?`<span style="font-size:10px">${badge}</span>`:''}</div>
+                <div class="ps-score-track" style="position:relative;overflow:visible">
+                  <div style="position:absolute;top:0;left:0;height:100%;width:${a*10}%;background:#34d39922;border-radius:4px;border:1px dashed #34d39944"></div>
+                  <div class="ps-score-fill" style="width:${v*10}%;background:${c};position:relative;z-index:1"></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:3px;min-width:52px;justify-content:flex-end">
+                  <span style="color:${c};font-size:12px;font-weight:700">${v}</span>
+                  ${a>v?`<span style="color:#34d399;font-size:9px">→${a}</span>`:''}
+                  ${badge?`<span style="font-size:10px">${badge}</span>`:''}
+                </div>
               </div>`}).join('')}
           </div>
         </div>
         <div class="ps-col ps-col-45" style="border-left:1px solid rgba(255,255,255,.06);padding-left:22px">
+          <div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">투자 유치 후 개선 전략</div>
           ${grp.length?psGroups(grp.slice(0,2),tc,4):psBullets(slide.bullets,tc)}
         </div>
       </div>
@@ -1905,15 +1950,52 @@ function renderPitchSlide(slide, idx, total){
   if(slide.type==='vc'){
     const vals=slide.values||[]
     const grp=slide.groups||[]
+    const thesis=slide.thesis
+    const whynow=slide.whynow
+    const moat=slide.moat
+    const verdictGrp=slide.verdict
+    const mst=slide.milestone
+    const roi=slide.roi
+    // thesis text: first item of thesis group, or first line of bullets
+    const thesisText=(thesis?.items||[])[0]||(slide.bullets||[])[0]||''
+    // verdict text
+    const verdictText=(verdictGrp?.items||[]).find(t=>/.{10}/.test(t))||''
+    // why now items
+    const whyItems=(whynow?.items||grp.find(g=>/why now|타이밍/i.test(g.heading))?.items||[]).slice(0,3)
+    // moat items
+    const moatItems=(moat?.items||grp.find(g=>/해자|moat|장벽/i.test(g.heading))?.items||[]).slice(0,3)
+    // milestone table rows (skip header row)
+    const mstRows=mst?.rows?.slice(0,4)||[]
+    const mstHeaders=mst?.headers||[]
     return `<div class="pitch-slide">
       <div class="ps-accent-bar" style="background:${accent}"></div>
-      <div class="ps-header">
+      <div class="ps-header" style="padding-bottom:6px">
         <div class="ps-tag" style="color:${tc}">${dot}${slide.tag}</div>
         <div class="ps-h1">${esc(slide.title)}</div>
+        ${thesisText?`<div style="margin-top:6px;padding:8px 14px;background:linear-gradient(90deg,rgba(129,140,248,.12),rgba(129,140,248,.04));border-left:3px solid #818cf8;border-radius:0 8px 8px 0">
+          <div style="font-size:9px;color:#818cf8;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Investment Thesis</div>
+          <div style="font-size:11px;color:#e2e8f0;line-height:1.5;font-style:italic">${esc(thesisText.slice(0,150))}</div>
+        </div>`:''}
       </div>
-      <div class="ps-body">
-        <div class="ps-col ps-col-45">
-          <div style="display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;gap:16px;flex:1;overflow:hidden;padding:0 28px 10px">
+        <div style="flex:1;display:flex;flex-direction:column;gap:10px;min-width:0;overflow-y:auto">
+          ${whyItems.length?`<div>
+            <div style="font-size:10px;font-weight:800;color:#fbbf24;margin-bottom:5px">⚡ Why Now?</div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              ${whyItems.map(t=>`<div style="display:flex;gap:6px;font-size:10px;color:#fde68a;line-height:1.4">
+                <span style="color:#fbbf24;flex-shrink:0">▸</span><span>${esc(t.slice(0,80))}</span>
+              </div>`).join('')}
+            </div>
+          </div>`:''}
+          ${moatItems.length?`<div>
+            <div style="font-size:10px;font-weight:800;color:#22d3ee;margin-bottom:5px">🏰 경쟁 해자 (Moat)</div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              ${moatItems.map(t=>`<div style="display:flex;gap:6px;font-size:10px;color:#a5f3fc;line-height:1.4">
+                <span style="color:#22d3ee;flex-shrink:0">▸</span><span>${esc(t.slice(0,80))}</span>
+              </div>`).join('')}
+            </div>
+          </div>`:''}
+          ${!whyItems.length&&!moatItems.length?`<div style="display:flex;flex-direction:column;gap:8px">
             ${(slide.labels||[]).map((l,i)=>{
               const v=vals[i]||0; const c=slide.colors?.[i]||'#818cf8'
               return `<div class="ps-score-row">
@@ -1921,12 +2003,36 @@ function renderPitchSlide(slide, idx, total){
                 <div class="ps-score-track"><div class="ps-score-fill" style="width:${v*10}%;background:${c}"></div></div>
                 <div class="ps-score-val" style="color:${c}">${v}</div>
               </div>`}).join('')}
-          </div>
+          </div>`:''}
         </div>
-        <div class="ps-col ps-col-55" style="border-left:1px solid rgba(255,255,255,.06);padding-left:22px">
-          ${grp.length?psGroups(grp.slice(0,3),tc,4):psBullets(slide.bullets,tc)}
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0;overflow-y:auto;border-left:1px solid rgba(255,255,255,.06);padding-left:16px">
+          ${mstRows.length?`<div>
+            <div style="font-size:10px;font-weight:800;color:#a78bfa;margin-bottom:6px">💰 투자 단계별 마일스톤</div>
+            <div style="display:flex;flex-direction:column;gap:4px">
+              ${mstRows.map((r,i)=>{
+                const stage=r[0]||''; const amt=r[2]||r[1]||''; const goal=r[1]||''
+                const SC=['#34d399','#818cf8','#a78bfa','#fbbf24']
+                const c=SC[i%4]
+                return `<div style="padding:6px 10px;background:rgba(255,255,255,.03);border-radius:8px;border-left:2px solid ${c}">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+                    <span style="font-size:10px;font-weight:800;color:${c}">${esc(stage)}</span>
+                    <span style="font-size:10px;color:#34d399;font-weight:700">${esc(amt.slice(0,20))}</span>
+                  </div>
+                  ${goal&&goal!==amt?`<div style="font-size:9px;color:#9ca3af;line-height:1.3">${esc(goal.slice(0,50))}</div>`:''}
+                </div>`
+              }).join('')}
+            </div>
+          </div>`
+          :grp.length?psGroups(grp.slice(0,2),tc,3):psBullets(slide.bullets,tc)}
         </div>
       </div>
+      ${verdictText?`<div style="margin:0 28px 12px;padding:10px 16px;background:linear-gradient(90deg,rgba(129,140,248,.12),rgba(129,140,248,.04));border-radius:12px;border:1px solid rgba(129,140,248,.25);display:flex;align-items:center;gap:10px">
+        <div style="font-size:20px;flex-shrink:0">💎</div>
+        <div>
+          <div style="font-size:9px;color:#818cf8;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px">VC 원라이너</div>
+          <div style="font-size:11px;color:#c7d2fe;font-weight:600;line-height:1.4">${esc(verdictText.slice(0,160))}</div>
+        </div>
+      </div>`:''}
     </div>`
   }
 
