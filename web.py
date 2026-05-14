@@ -828,4 +828,6 @@ async def index():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("web:app", host="0.0.0.0", port=8200, reload=True)
+    port = int(os.environ.get("PORT", 8200))
+    reload = os.environ.get("ENV", "dev") == "dev"
+    uvicorn.run("web:app", host="0.0.0.0", port=port, reload=reload)
