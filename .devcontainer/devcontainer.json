@@ -10,7 +10,7 @@
     }
   },
   "postCreateCommand": "pip install -r requirements.txt",
-  "postStartCommand": "nohup python web.py > /tmp/app.log 2>&1 &",
+  "postStartCommand": "[ -n \"$ANTHROPIC_API_KEY\" ] && echo \"ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}\" > .env; nohup python web.py > /tmp/app.log 2>&1 &",
   "customizations": {
     "vscode": {
       "extensions": ["ms-python.python"]
