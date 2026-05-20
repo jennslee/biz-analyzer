@@ -1066,7 +1066,7 @@ function buildSecNav(sections){
   const inner=document.getElementById('sec-nav-inner')
   inner.innerHTML=sections.map(s=>{
     const icon=SEC_ICONS[s.num-1]||'📋'
-    return `<button class="sec-nav-btn" id="nav-btn-${s.num}" onclick="scrollToSection(${s.num})">${icon} ${s.num}. ${esc(s.title.replace(/\d+\.\s*/,'').substring(0,12))}</button>`
+    return `<button class="sec-nav-btn" id="nav-btn-${s.num}" onclick="scrollToSection(${s.num})">${icon} ${s.num}. ${esc(s.title.replace(/\d+\.\s*/,''))}</button>`
   }).join('')
   nav.style.display='block'
 }
