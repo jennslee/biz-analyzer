@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 사업구상 분석 웹서버
 uvicorn web:app --host 0.0.0.0 --port 8200 --reload
@@ -427,6 +427,12 @@ STAGE_NAMES = {
 DEPTH_TOKENS = {"quick": 5000, "standard": 8000, "deep": 16000}
 
 
+LANG_INSTRUCTION = {
+    "en": "Write ALL analysis content in English. All section headings, bullet points, tables, and conclusions must be in English.",
+    "ja": "分析内容をすべて日本語で記述してください。見出し、箇条書き、表、結論をすべて日本語で記述すること。",
+    "zh": "请将所有分析内容用中文撰写。所有标题、要点、表格和结论均须使用中文。",
+}
+
 class AnalyzeRequest(BaseModel):
     idea: str
     scope: List[str] = ["global"]
@@ -434,6 +440,7 @@ class AnalyzeRequest(BaseModel):
     stage: str = "idea"
     depth: str = "standard"
     currency: str = "KRW"
+    lang: str = "ko"
 
 
 def build_context(body: AnalyzeRequest) -> str:
