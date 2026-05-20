@@ -14,10 +14,11 @@
   --sidebar-bg:rgba(7,7,15,.7);--topbar-bg:rgba(7,7,15,.95);--card-bg:rgba(255,255,255,.03);
 }
 html.light{
-  --bg:#f1f5f9;--s1:rgba(0,0,0,.03);--s2:rgba(0,0,0,.055);
-  --border:rgba(0,0,0,.1);--border2:rgba(0,0,0,.18);
-  --text:#1e293b;--muted:#64748b;
-  --sidebar-bg:rgba(248,250,252,.95);--topbar-bg:rgba(255,255,255,.97);--card-bg:rgba(0,0,0,.025);
+  --bg:#f1f5f9;--s1:rgba(0,0,0,.03);--s2:rgba(0,0,0,.06);
+  --border:rgba(0,0,0,.12);--border2:rgba(0,0,0,.22);
+  --text:#1e293b;--muted:#475569;
+  --indigo:#3730a3;--purple:#6d28d9;--emerald:#047857;--red:#dc2626;--amber:#92400e;--cyan:#0e7490;
+  --sidebar-bg:#f8fafc;--topbar-bg:#ffffff;--card-bg:rgba(0,0,0,.025);
 }
 html{font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
 body{background:var(--bg);background-image:
@@ -27,22 +28,55 @@ body{background:var(--bg);background-image:
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:99px}
-html.light ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15)}
-html.light textarea#idea{background:rgba(0,0,0,.04);color:var(--text)}
-html.light select.field-select{background:rgba(0,0,0,.04);color:var(--text)}
-html.light select.field-select option{background:#f1f5f9;color:var(--text)}
-html.light .chip{border-color:rgba(0,0,0,.12);color:var(--muted)}
-html.light .chip:hover{border-color:rgba(0,0,0,.22);color:var(--text)}
-html.light .chip.active{border-color:rgba(99,102,241,.5);background:rgba(99,102,241,.1);color:#4f46e5}
-html.light .country-chip{border-color:rgba(0,0,0,.12);color:var(--muted)}
-html.light .country-chip.active{border-color:rgba(99,102,241,.5);background:rgba(99,102,241,.1);color:#4f46e5}
-html.light #sec-nav{background:rgba(241,245,249,.95)}
-html.light .sec-nav-btn{color:var(--muted)}
-html.light .sec-nav-btn.active{background:rgba(99,102,241,.1);color:#4f46e5}
-html.light .result-card{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.08)}
-html.light .result-card h1,html.light .result-card h2,html.light .result-card h3{color:#1e293b}
+html.light ::-webkit-scrollbar-thumb{background:rgba(0,0,0,.18)}
+/* Light mode — form inputs */
+html.light textarea#idea{background:#fff;border-color:rgba(0,0,0,.15);color:#1e293b}
+html.light textarea#idea:focus{border-color:#6366f1}
+html.light select.field-select{background:#fff;border-color:rgba(0,0,0,.15);color:#1e293b}
+html.light select.field-select option{background:#fff;color:#1e293b}
+html.light input[type=text]{background:#fff;border-color:rgba(0,0,0,.15);color:#1e293b}
+/* Light mode — chips */
+html.light .chip{border-color:rgba(0,0,0,.18);color:#475569;background:#fff}
+html.light .chip:hover{border-color:rgba(0,0,0,.3);color:#1e293b;background:#f8fafc}
+html.light .chip.active{border-color:#6366f1;background:#eef2ff;color:#3730a3}
+html.light .country-chip{border-color:rgba(0,0,0,.18);color:#475569;background:#fff}
+html.light .country-chip:hover{border-color:rgba(0,0,0,.3);color:#1e293b}
+html.light .country-chip.active{border-color:#6366f1;background:#eef2ff;color:#3730a3}
+/* Light mode — nav & topbar */
+html.light .logo-title{color:#1e293b}
+html.light #sec-nav{background:#f1f5f9;border-bottom:1px solid rgba(0,0,0,.1)}
+html.light .sec-nav-btn{color:#475569}
+html.light .sec-nav-btn:hover{color:#1e293b;border-color:rgba(0,0,0,.18)}
+html.light .sec-nav-btn.active{background:#eef2ff;border-color:#6366f1;color:#3730a3}
+/* Light mode — result area */
+html.light .result-card{background:#fff;border-color:rgba(0,0,0,.1)}
+html.light .md-h1{color:#1e293b}
+html.light .md-h2{color:#3730a3}
+html.light .md-h3{color:#6d28d9}
+html.light .md-hr{border-top-color:rgba(0,0,0,.1)}
+html.light .md-p{color:#334155}
+html.light .md-li{color:#334155}
+html.light .md-table th{background:#f1f5f9;color:#1e293b;border-color:rgba(0,0,0,.12)}
+html.light .md-table td{color:#334155;border-color:rgba(0,0,0,.08)}
+html.light .md-code{background:#f1f5f9;color:#1e293b}
+/* Light mode — stat/score elements */
+html.light .sec-number{color:#fff}
+html.light .sec-title{color:#fff}
+html.light .stat-tile{background:#eef2ff;border-color:rgba(99,102,241,.25)}
+html.light .stat-tile-label{color:#475569}
+html.light .stat-tile-val{color:#1e293b}
+html.light .score-label{color:#475569}
+html.light .score-val{color:#3730a3}
+/* Light mode — misc */
 html.light .toggle-btn{background:rgba(0,0,0,.12)}
-html.light .toggle-label{color:var(--text)}
+html.light .toggle-label{color:#1e293b}
+html.light .field-label{color:#64748b}
+html.light .divider{background:rgba(0,0,0,.1)}
+html.light #token-info{color:#475569}
+html.light .history-item{background:#fff;border-color:rgba(0,0,0,.1)}
+html.light .history-item:hover{background:#f8fafc;border-color:rgba(99,102,241,.35)}
+html.light .history-meta{color:#475569}
+html.light .btn-export{filter:brightness(.85)}
 
 /* ── Header ── */
 .topbar{display:flex;align-items:center;justify-content:space-between;
@@ -604,8 +638,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
       <div>
         <div class="field-label">분석 언어</div>
         <div class="chips" id="lang-chips">
-          <button class="chip active" data-val="ko" onclick="selectChip('lang-chips',this,'ko')">🇰🇷 한국어</button>
-          <button class="chip" data-val="en" onclick="selectChip('lang-chips',this,'en')">🇺🇸 English</button>
+          <button class="chip" data-val="ko" onclick="selectChip('lang-chips',this,'ko')">🇰🇷 한국어</button>
+          <button class="chip active" data-val="en" onclick="selectChip('lang-chips',this,'en')">🇺🇸 English</button>
           <button class="chip" data-val="ja" onclick="selectChip('lang-chips',this,'ja')">🇯🇵 日本語</button>
           <button class="chip" data-val="zh" onclick="selectChip('lang-chips',this,'zh')">🇨🇳 中文</button>
         </div>
@@ -655,7 +689,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
 
 <script>
 // ── State ──────────────────────────────────────────────────────────────────────
-const S = { globalOn:false, countries:['usa'], stage:'idea', depth:'deep', currency:'USD', lang:'ko', industry:'', fullText:'', ctrl:null, charts:{} }
+const S = { globalOn:false, countries:['usa'], stage:'idea', depth:'deep', currency:'USD', lang:'en', industry:'', fullText:'', ctrl:null, charts:{} }
 
 // ── Theme ──────────────────────────────────────────────────────────────────────
 function toggleTheme() {
