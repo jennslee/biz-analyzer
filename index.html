@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1.0" />
@@ -1005,9 +1005,9 @@ function renderRevenueChart(cid, data){
   const ctx=document.getElementById(cid); if(!ctx) return
   const labels=['Y1','Y2','Y3','Y4','Y5']
   S.charts[cid]=new Chart(ctx,{type:'line',data:{labels,datasets:[
-    {label:'보수적',data:data.cons,borderColor:'rgba(248,113,113,.8)',backgroundColor:'rgba(248,113,113,.08)',borderWidth:2,pointRadius:4,fill:false,tension:.4},
-    {label:'기본',data:data.base,borderColor:'rgba(99,102,241,.9)',backgroundColor:'rgba(99,102,241,.1)',borderWidth:2.5,pointRadius:5,fill:false,tension:.4},
-    {label:'낙관적',data:data.opt,borderColor:'rgba(52,211,153,.8)',backgroundColor:'rgba(52,211,153,.08)',borderWidth:2,pointRadius:4,fill:false,tension:.4},
+    {label:getPL(S.lang).scenarios[0],data:data.cons,borderColor:'rgba(248,113,113,.8)',backgroundColor:'rgba(248,113,113,.08)',borderWidth:2,pointRadius:4,fill:false,tension:.4},
+    {label:getPL(S.lang).scenarios[1],data:data.base,borderColor:'rgba(99,102,241,.9)',backgroundColor:'rgba(99,102,241,.1)',borderWidth:2.5,pointRadius:5,fill:false,tension:.4},
+    {label:getPL(S.lang).scenarios[2],data:data.opt,borderColor:'rgba(52,211,153,.8)',backgroundColor:'rgba(52,211,153,.08)',borderWidth:2,pointRadius:4,fill:false,tension:.4},
   ]},options:{responsive:true,maintainAspectRatio:false,
     plugins:{legend:{labels:{color:'#9ca3af',font:{size:10},boxWidth:12}},
       tooltip:{callbacks:{label:c=>` ${c.dataset.label}: ${c.raw.toLocaleString()} ${data.unit}`}}},
@@ -1453,8 +1453,64 @@ function pTable(lines){
   return {headers:rows[0], rows:rows.slice(1)}
 }
 
+// ── Pitch label translations ────────────────────────────────────────────────
+function getPL(lang){
+  const M={
+    ko:{
+      titles:['문제와 해결책','시장 규모 분析','핵심 고객 분析','경쟁사 분析','수익 모델','MVP 전략','마케팅 전략','수익 시뮬레이션 (5개년)','투자 매력도','최종 결론','VC 투자자 심사'],
+      invLabels:['시장성','확장성','수익성','방어력','글로벌','AI위험','매력도'],
+      diffLabels:['개발','시장진입','마케팅','자본','경쟁'],
+      tamBar:['TAM 전체시장','SAM 접근가능','SOM 확보가능'],
+      scenarios:['보수적','기본','낙관적'],
+      noContent:'내용 없음', custFallback:'고객 정보', coreFeat:'핵심 기능',
+      validation:'검증 방법', fitAnalysis:'적합도 분析', bmFallback:'수익 모델',
+      currentAvg:'현재 평균', afterInvest:'투자 후 예상', afterLabel:'투자 후', currentLabel:'현재',
+      bmSub:(n)=>`${n}'+L.bmSub(grp.length)+'`, baseY5:'기본 Y5:',
+      radarTitle:getPL(S.lang).radarTitle,
+    },
+    en:{
+      titles:['Problem & Solution','Market Analysis','Customer Analysis','Competitive Analysis','Revenue Model','MVP Strategy','Marketing Strategy','Revenue Simulation (5Y)','Investment Attractiveness','Final Conclusion','VC Evaluation'],
+      invLabels:['Market','Scalability','Revenue','Defense','Global','AI Risk','Appeal'],
+      diffLabels:['Dev','Market Entry','Marketing','Capital','Competition'],
+      tamBar:['TAM Total','SAM Serviceable','SOM Obtainable'],
+      scenarios:['Conservative','Base','Optimistic'],
+      noContent:'No content', custFallback:'Customer Info', coreFeat:'Core Features',
+      validation:'Validation', fitAnalysis:'Fit Analysis', bmFallback:'Revenue Model',
+      currentAvg:'Current Avg', afterInvest:'Post-Investment', afterLabel:'After', currentLabel:'Current',
+      bmSub:(n)=>`${n} Revenue Models`, baseY5:'Base Y5:',
+      radarTitle:'Investment Attractiveness Radar (out of 10)',
+    },
+    ja:{
+      titles:['課題と解決策','市場規模分析','顧客分析','競合分析','収益モデル','MVP戦略','マーケティング戦略','収益シミュレーション（5年）','投資魅力度','最終結論','VC審査'],
+      invLabels:['市場性','拡張性','収益性','防御力','グローバル','AIリスク','魅力度'],
+      diffLabels:['開発','市場参入','マーケ','資本','競合'],
+      tamBar:['TAM 全市場','SAM 対応可能','SOM 獲得可能'],
+      scenarios:['保守的','基本','楽観的'],
+      noContent:'内容なし', custFallback:'顧客情報', coreFeat:'主要機能',
+      validation:'検証方法', fitAnalysis:'適合性分析', bmFallback:'収益モデル',
+      currentAvg:'現在平均', afterInvest:'投資後予想', afterLabel:'投資後', currentLabel:'現在',
+      bmSub:(n)=>`${n}つの収益モデル`, baseY5:'基本Y5:',
+      radarTitle:'投資魅力度レーダー（10点基準）',
+    },
+    zh:{
+      titles:['问题与解决方案','市场规模分析','核心客户分析','竞争对手分析','盈利模式','MVP战略','营销战略','收益模拟（5年）','投资吸引力','最终结论','VC投资审查'],
+      invLabels:['市场性','扩展性','盈利性','防御力','全球化','AI风险','吸引力'],
+      diffLabels:['开发','市场进入','营销','资本','竞争'],
+      tamBar:['TAM 全市场','SAM 可服务','SOM 可获取'],
+      scenarios:['保守','基本','乐观'],
+      noContent:'无内容', custFallback:'客户信息', coreFeat:'核心功能',
+      validation:'验证方法', fitAnalysis:'适合度分析', bmFallback:'盈利模式',
+      currentAvg:'当前平均', afterInvest:'投资后预期', afterLabel:'投资后', currentLabel:'当前',
+      bmSub:(n)=>`${n}种盈利模式`, baseY5:'基本Y5:',
+      radarTitle:'投资吸引力雷达（10分基准）',
+    },
+  }
+  return M[lang]||M.ko
+}
+
 // buildPitchSlides
 function buildPitchSlides(text, idea){
+  const L=getPL(S.lang)
   const secs=parseSections(text)
   const byNum={}; secs.forEach(s=>byNum[s.num]=s)
   const get=n=>byNum[n]?.lines||[]
@@ -1466,7 +1522,7 @@ function buildPitchSlides(text, idea){
   const all1=pLines(get(1))
   contentSlides.push({type:'problem',
     tag:'Problem · Solution', tagColor:'#f87171',
-    title:'문제와 해결책',
+    title:L.titles[0],
     groups: s1groups.slice(0,3),
     kv: kv1,
     allLines: all1
@@ -1477,7 +1533,7 @@ function buildPitchSlides(text, idea){
   const s2groups=pByHeading(get(2))
   contentSlides.push({type:'market',
     tag:'Market Opportunity', tagColor:'#22d3ee',
-    title:'시장 규모 분석',
+    title:L.titles[1],
     mkt, groups: s2groups.slice(0,3),
     bullets: pLines(get(2)).slice(0,6)
   })
@@ -1486,8 +1542,8 @@ function buildPitchSlides(text, idea){
   const s3groups=pByHeading(get(3))
   contentSlides.push({type:'persona',
     tag:'Target Customer', tagColor:'#a78bfa',
-    title:'핵심 고객 분석',
-    groups: s3groups.length ? s3groups.slice(0,3) : [{heading:'고객 정보', items:pLines(get(3)).slice(0,8)}]
+    title:L.titles[2],
+    groups: s3groups.length ? s3groups.slice(0,3) : [{heading:L.custFallback, items:pLines(get(3)).slice(0,8)}]
   })
 
   // D. Competition (섹션4)
@@ -1496,7 +1552,7 @@ function buildPitchSlides(text, idea){
   const compLines=pLines(get(4))
   contentSlides.push({type:'competition',
     tag:'Competitive Landscape', tagColor:'#f87171',
-    title:'경쟁사 분석',
+    title:L.titles[3],
     table: compTable,
     groups: s4groups.slice(0,3),
     lines: compLines.slice(0,8)
@@ -1508,8 +1564,8 @@ function buildPitchSlides(text, idea){
   const s6lines=pLines(get(6))
   contentSlides.push({type:'bm',
     tag:'Business Model', tagColor:'#fbbf24',
-    title:'수익 모델',
-    groups: s6groups.length ? s6groups.slice(0,5) : [{heading:'수익 모델', items:s6lines.slice(0,5)}, {heading:'적합도 분석', items:s6lines.slice(5,10)}],
+    title:L.titles[4],
+    groups: s6groups.length ? s6groups.slice(0,5) : [{heading:L.bmFallback, items:s6lines.slice(0,5)}, {heading:L.fitAnalysis, items:s6lines.slice(5,10)}],
     kv: s6kv,
     lines: s6lines.slice(0,8)
   })
@@ -1519,8 +1575,8 @@ function buildPitchSlides(text, idea){
   const mvpLines=pLines(get(8))
   contentSlides.push({type:'mvp',
     tag:'MVP & Roadmap', tagColor:'#34d399',
-    title:'MVP 전략',
-    groups: s8groups.length ? s8groups.slice(0,4) : [{heading:'핵심 기능', items:mvpLines.slice(0,4)}, {heading:'검증 방법', items:mvpLines.slice(4,8)}]
+    title:L.titles[5],
+    groups: s8groups.length ? s8groups.slice(0,4) : [{heading:L.coreFeat, items:mvpLines.slice(0,4)}, {heading:L.validation, items:mvpLines.slice(4,8)}]
   })
 
   // G. Go-to-Market (섹션10)
@@ -1528,7 +1584,7 @@ function buildPitchSlides(text, idea){
   const s10groups=pByHeading(get(10))
   contentSlides.push({type:'channels',
     tag:'Go-to-Market', tagColor:'#818cf8',
-    title:'마케팅 전략',
+    title:L.titles[6],
     channels: chData,
     groups: s10groups.slice(0,2),
     bullets: pLines(get(10)).slice(0,6)
@@ -1541,7 +1597,7 @@ function buildPitchSlides(text, idea){
   const revLines=pLines(get(13))
   contentSlides.push({type:'revenue',
     tag:'Financial Projection', tagColor:'#34d399',
-    title:'수익 시뮬레이션 (5개년)',
+    title:L.titles[7],
     rev, groups: s13groups.slice(0,4),
     kv: revKV,
     allLines: revLines,
@@ -1555,8 +1611,8 @@ function buildPitchSlides(text, idea){
   const s11groups=pByHeading(get(11))
   contentSlides.push({type:'investment',
     tag:'Investment Attractiveness', tagColor:'#34d399',
-    title:'투자 매력도',
-    labels:['시장성','확장성','수익성','방어력','글로벌','AI위험','매력도'],
+    title:L.titles[8],
+    labels:L.invLabels,
     values: inv||[0,0,0,0,0,0,0],
     afterValues: invAfter,
     colors:['#34d399','#22d3ee','#818cf8','#a78bfa','#22d3ee','#f87171','#fbbf24'],
@@ -1567,16 +1623,16 @@ function buildPitchSlides(text, idea){
   // J. Conclusion (섹션12)
   const s12groups=pByHeading(get(12))
   const conLines=pLines(get(12))
-  const con_sg=s12groups.find(g=>/성공할|성공 가능성이 높/i.test(g.heading))
-  const con_fg=s12groups.find(g=>/실패 가능성|실패할/i.test(g.heading))
+  const con_sg=s12groups.find(g=>/성공할|성공 가능성이 높|why.*success|success.*reason|likely.*succeed|reasons.*success/i.test(g.heading))
+  const con_fg=s12groups.find(g=>/실패 가능성|실패할|failure.*risk|why.*fail|challenges|reasons.*fail/i.test(g.heading))
   const con_ag=s12groups.find(g=>/액션|플랜|action/i.test(g.heading))
-  const con_vg=s12groups.find(g=>/성공 변수|핵심 변수/i.test(g.heading))
+  const con_vg=s12groups.find(g=>/성공 변수|핵심 변수|key.*factor|critical.*factor|success.*factor/i.test(g.heading))
   contentSlides.push({type:'conclusion',
     tag:'Conclusion & Action', tagColor:'#fbbf24',
-    title:'최종 결론',
+    title:L.titles[9],
     successGroup: con_sg, failGroup: con_fg, actionGroup: con_ag, varGroup: con_vg,
     groups: s12groups,
-    verdict: conLines.find(l=>/투자|시작|성공/i.test(l)) || conLines[0] || ''
+    verdict: conLines.find(l=>/투자|시작|성공|invest|recommend|start now|verdict/i.test(l)) || conLines[0] || ''
   })
 
   // K. VC (섹션15)
@@ -1584,15 +1640,15 @@ function buildPitchSlides(text, idea){
   const s15groups=pByHeading(get(15))
   const s15lines=pLines(get(15))
   const vc_thesis=s15groups.find(g=>/투자 명제|thesis|investment/i.test(g.heading))
-  const vc_whynow=s15groups.find(g=>/why now|타이밍|지금/i.test(g.heading))
-  const vc_moat=s15groups.find(g=>/해자|moat|장벽/i.test(g.heading))
-  const vc_verdict=s15groups.find(g=>/원라이너|verdict|평가/i.test(g.heading))
+  const vc_whynow=s15groups.find(g=>/why now|타이밍|지금|timing/i.test(g.heading))
+  const vc_moat=s15groups.find(g=>/해자|moat|장벽|barrier/i.test(g.heading))
+  const vc_verdict=s15groups.find(g=>/원라이너|verdict|평가|one.liner/i.test(g.heading))
   const vc_milestone=pTable(get(15))
-  const vc_roi=s15groups.find(g=>/10x|roi|수익 가능|멀티플/i.test(g.heading))
+  const vc_roi=s15groups.find(g=>/10x|roi|수익 가능|멀티플|return|multiple/i.test(g.heading))
   contentSlides.push({type:'vc',
     tag:'VC Perspective', tagColor:'#818cf8',
-    title:'VC 투자자 심사',
-    labels:['개발','시장진입','마케팅','자본','경쟁'],
+    title:L.titles[10],
+    labels:L.diffLabels,
     values: diffVals||[0,0,0,0,0],
     colors:['#818cf8','#f87171','#a78bfa','#fbbf24','#f87171'],
     groups: s15groups,
@@ -1619,7 +1675,7 @@ function buildPitchSlides(text, idea){
 
 // ── 슬라이드 렌더러 ──────────────────────────────────────────────────────────
 function psBullets(items, color, maxLen=80){
-  if(!items||!items.length) return '<div style="color:#374151;font-size:11px">내용 없음</div>'
+  if(!items||!items.length) return '<div style="color:#374151;font-size:11px">'+getPL(S.lang).noContent+'</div>'
   return `<div class="ps-bullets">${items.map(b=>`
     <div class="ps-bullet">
       <span class="ps-bullet-dot" style="background:${color};flex-shrink:0"></span>
@@ -1643,6 +1699,7 @@ function psGroups(groups, color, maxItems=4){
 }
 
 function renderPitchSlide(slide, idx, total){
+  const L=getPL(S.lang)
   const accent=SLIDE_ACCENTS[idx%SLIDE_ACCENTS.length]
   const dot=`<span class="ps-tag-dot" style="background:${slide.tagColor||'#818cf8'}"></span>`
   const tc=slide.tagColor||'#818cf8'
@@ -1734,7 +1791,7 @@ function renderPitchSlide(slide, idx, total){
         </div>
         <div class="ps-col ps-col-45" style="justify-content:center;border-left:1px solid rgba(255,255,255,.06);padding-left:22px">
           ${mkt?`<div style="display:flex;flex-direction:column;gap:12px">
-            ${[['TAM 전체시장','#6366f1',mkt.TAM],['SAM 접근가능','#8b5cf6',mkt.SAM],['SOM 확보가능','#34d399',mkt.SOM]].map(([l,c,v])=>`
+            ${[[L.tamBar[0],'#6366f1',mkt.TAM],[L.tamBar[1],'#8b5cf6',mkt.SAM],[L.tamBar[2],'#34d399',mkt.SOM]].map(([l,c,v])=>`
             <div>
               <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px">
                 <span style="color:${c};font-weight:700">${l}</span>
@@ -1836,7 +1893,7 @@ function renderPitchSlide(slide, idx, total){
             const items=g.items||[]
             return `<div style="padding:10px 14px;background:rgba(255,255,255,.03);border-radius:10px;border:1px solid ${c}22;border-left:3px solid ${c}">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-                <div style="font-size:11px;font-weight:800;color:${c}">${esc(g.heading||'수익 모델')}</div>
+                <div style="font-size:11px;font-weight:800;color:${c}">${esc(g.heading||L.bmFallback)}</div>
                 ${i===0?`<span style="font-size:8px;padding:2px 7px;background:${c}22;border-radius:4px;color:${c};font-weight:700">PRIMARY</span>`:''}
               </div>
               <div style="display:flex;flex-direction:column;gap:3px">
@@ -1946,7 +2003,7 @@ function renderPitchSlide(slide, idx, total){
         <div class="ps-h1">${esc(slide.title)}</div>
         <div class="ps-sub" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <span>3-Scenario · <strong style="color:${tc}">${esc(unit)}</strong>${cagr!==null?` · 낙관 CAGR <strong style="color:#34d399">${cagr}%</strong>`:''}</span>
-          ${baseY5>0?`<span style="font-size:10px;padding:2px 8px;background:rgba(129,140,248,.12);border:1px solid rgba(129,140,248,.25);border-radius:5px;color:#818cf8">기본 Y5: ${baseY5.toLocaleString()}</span>`:''}
+          ${baseY5>0?`<span style="font-size:10px;padding:2px 8px;background:rgba(129,140,248,.12);border:1px solid rgba(129,140,248,.25);border-radius:5px;color:#818cf8">'+L.baseY5+' ${baseY5.toLocaleString()}</span>`:''}
           ${optY5>0?`<span style="font-size:10px;padding:2px 8px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);border-radius:5px;color:#34d399">낙관 Y5: ${optY5.toLocaleString()}</span>`:''}
         </div>
       </div>
@@ -1960,7 +2017,7 @@ function renderPitchSlide(slide, idx, total){
             <div style="display:grid;grid-template-columns:60px repeat(5,1fr);font-size:9px;color:#4b5563;padding:0 8px;margin-bottom:1px">
               <span></span><span style="text-align:right">Y1</span><span style="text-align:right">Y2</span><span style="text-align:right">Y3</span><span style="text-align:right">Y4</span><span style="text-align:right">Y5</span>
             </div>
-            ${[['보수적',consV,'#f87171'],['기본',baseV,'#818cf8'],['낙관적',optV,'#34d399']].map(([l,d,c])=>`
+            ${[[L.scenarios[0],consV,'#f87171'],[L.scenarios[1],baseV,'#818cf8'],[L.scenarios[2],optV,'#34d399']].map(([l,d,c])=>`
             <div style="display:grid;grid-template-columns:60px repeat(5,1fr);align-items:start;padding:7px 8px;border-radius:9px;background:rgba(255,255,255,.03);border:1px solid ${c}22">
               <div style="display:flex;align-items:center;height:34px"><span style="font-size:10px;font-weight:800;color:${c}">${l}</span></div>
               ${d.map((v,i)=>`<div style="text-align:right;padding:0 2px">
@@ -2003,9 +2060,9 @@ function renderPitchSlide(slide, idx, total){
         <div class="ps-tag" style="color:${tc}">${dot}${slide.tag}</div>
         <div class="ps-h1">${esc(slide.title)}</div>
         ${vals.some(v=>v>0)?`<div class="ps-sub" style="display:flex;align-items:center;gap:12px">
-          <span>현재 평균 <strong style="color:#818cf8;font-size:15px">${avg}</strong>/10</span>
+          <span>'+L.currentAvg+' <strong style="color:#818cf8;font-size:15px">${avg}</strong>/10</span>
           <span style="color:#4b5563">→</span>
-          <span>투자 후 예상 <strong style="color:#34d399;font-size:15px">${avgAfter}</strong>/10</span>
+          <span>'+L.afterInvest+' <strong style="color:#34d399;font-size:15px">${avgAfter}</strong>/10</span>
           ${gain?`<span style="font-size:10px;padding:2px 8px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);border-radius:5px;color:#34d399">+${gain} upside</span>`:''}
         </div>`:''}
       </div>
@@ -2013,8 +2070,8 @@ function renderPitchSlide(slide, idx, total){
         <div class="ps-col ps-col-55">
           <div style="display:flex;flex-direction:column;gap:8px">
             <div style="display:flex;justify-content:flex-end;gap:12px;font-size:9px;color:#4b5563;padding-right:4px;margin-bottom:2px">
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:rgba(255,255,255,.15);display:inline-block"></span>현재</span>
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:#34d39966;display:inline-block"></span>투자 후</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:rgba(255,255,255,.15);display:inline-block"></span>'+L.currentLabel+'</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:#34d39966;display:inline-block"></span>'+L.afterLabel+'</span>
             </div>
             ${(slide.labels||[]).map((l,i)=>{
               const v=vals[i]||0; const a=after[i]||0
@@ -2211,8 +2268,8 @@ function initPitchCharts(slides){
       labels:['Y1','Y2','Y3','Y4','Y5'],
       datasets:[
         {label:'보수적',data:rev.cons||[0,0,0,0,0],borderColor:'#f87171',backgroundColor:'rgba(248,113,113,.08)',tension:.4,fill:true,pointRadius:3,pointBackgroundColor:'#f87171',borderWidth:2},
-        {label:'기본',  data:rev.base||[0,0,0,0,0],borderColor:'#818cf8',backgroundColor:'rgba(129,140,248,.08)',tension:.4,fill:true,pointRadius:3,pointBackgroundColor:'#818cf8',borderWidth:2},
-        {label:'낙관적',data:rev.opt ||[0,0,0,0,0],borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.09)', tension:.4,fill:true,pointRadius:3,pointBackgroundColor:'#34d399',borderWidth:2.5}
+        {label:getPL(S.lang).scenarios[1],  data:rev.base||[0,0,0,0,0],borderColor:'#818cf8',backgroundColor:'rgba(129,140,248,.08)',tension:.4,fill:true,pointRadius:3,pointBackgroundColor:'#818cf8',borderWidth:2},
+        {label:getPL(S.lang).scenarios[2],data:rev.opt ||[0,0,0,0,0],borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.09)', tension:.4,fill:true,pointRadius:3,pointBackgroundColor:'#34d399',borderWidth:2.5}
       ]
     },
     options:{
