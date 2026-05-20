@@ -700,12 +700,22 @@ def md_to_pptx(text: str, idea: str, theme: str = "dark") -> bytes:
             if s.startswith('|'):
                 if _re.match(r'^\|[\s\-|:]+\|', s): continue
                 cells = [clean_md(c) for c in s.split('|')[1:-1] if c.strip()]
-                if cells: (grp['items'] if grp is not None else bullets).append('  |  '.join(cells)[:85])
+                if cells:
+                    if len(cells) >= 3 and cells[0].strip().isdigit():
+                        row_text = cells[1] + (f' · {cells[-1]}' if len(cells) >= 4 else '')
+                    elif len(cells) >= 2:
+                        row_text = f'{cells[0]} · {cells[1]}'
+                    else:
+                        row_text = cells[0]
+                    (grp['items'] if grp is not None else bullets).append(row_text[:80])
                 continue
             if s.startswith('## ') or s.startswith('### '):
                 grp = {'heading': clean_md(s.lstrip('#')), 'items': []}; groups.append(grp)
             elif _re.match(r'^[-*] ', s):
                 item = clean_md(s[2:])
+                (grp['items'] if grp is not None else bullets).append(item)
+            elif _re.match(r'^\d+[\.\)]\s', s):
+                item = clean_md(_re.sub(r'^\d+[\.\)]\s*', '', s))
                 (grp['items'] if grp is not None else bullets).append(item)
             elif ':' in s and not s.startswith('#'):
                 k, _, v = s.partition(':')
