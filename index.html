@@ -1465,8 +1465,8 @@ function getPL(lang){
       noContent:'내용 없음', custFallback:'고객 정보', coreFeat:'핵심 기능',
       validation:'검증 방법', fitAnalysis:'적합도 분析', bmFallback:'수익 모델',
       currentAvg:'현재 평균', afterInvest:'투자 후 예상', afterLabel:'투자 후', currentLabel:'현재',
-      bmSub:(n)=>`${n}'+L.bmSub(grp.length)+'`, baseY5:'기본 Y5:',
-      radarTitle:getPL(S.lang).radarTitle,
+      bmSub:(n)=>n+'가지 수익 모델', baseY5:'기본 Y5:',
+      radarTitle:'투자 매력도 레이더 (10점 기준)',
     },
     en:{
       titles:['Problem & Solution','Market Analysis','Customer Analysis','Competitive Analysis','Revenue Model','MVP Strategy','Marketing Strategy','Revenue Simulation (5Y)','Investment Attractiveness','Final Conclusion','VC Evaluation'],
@@ -2060,9 +2060,9 @@ function renderPitchSlide(slide, idx, total){
         <div class="ps-tag" style="color:${tc}">${dot}${slide.tag}</div>
         <div class="ps-h1">${esc(slide.title)}</div>
         ${vals.some(v=>v>0)?`<div class="ps-sub" style="display:flex;align-items:center;gap:12px">
-          <span>'+L.currentAvg+' <strong style="color:#818cf8;font-size:15px">${avg}</strong>/10</span>
+          <span>${L.currentAvg} <strong style="color:#818cf8;font-size:15px">${avg}</strong>/10</span>
           <span style="color:#4b5563">→</span>
-          <span>'+L.afterInvest+' <strong style="color:#34d399;font-size:15px">${avgAfter}</strong>/10</span>
+          <span>${L.afterInvest} <strong style="color:#34d399;font-size:15px">${avgAfter}</strong>/10</span>
           ${gain?`<span style="font-size:10px;padding:2px 8px;background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.25);border-radius:5px;color:#34d399">+${gain} upside</span>`:''}
         </div>`:''}
       </div>
@@ -2070,8 +2070,8 @@ function renderPitchSlide(slide, idx, total){
         <div class="ps-col ps-col-55">
           <div style="display:flex;flex-direction:column;gap:8px">
             <div style="display:flex;justify-content:flex-end;gap:12px;font-size:9px;color:#4b5563;padding-right:4px;margin-bottom:2px">
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:rgba(255,255,255,.15);display:inline-block"></span>'+L.currentLabel+'</span>
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:#34d39966;display:inline-block"></span>'+L.afterLabel+'</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:rgba(255,255,255,.15);display:inline-block"></span>${L.currentLabel}</span>
+              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:#34d39966;display:inline-block"></span>${L.afterLabel}</span>
             </div>
             ${(slide.labels||[]).map((l,i)=>{
               const v=vals[i]||0; const a=after[i]||0
