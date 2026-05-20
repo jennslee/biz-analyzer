@@ -613,11 +613,33 @@ def md_to_pptx(text: str, idea: str, theme: str = "dark") -> bytes:
         RGBColor(0x22,0xd3,0xee), RGBColor(0x34,0xd3,0x99), RGBColor(0xfb,0xbf,0x24),
     ]
 
+    # Section tag labels + accent colors matching web buildPitchSlides
+    SEC_META = {
+        1:  ('Problem & Solution',         RGBColor(0xf8,0x71,0x71)),
+        2:  ('Market Opportunity',          RGBColor(0x22,0xd3,0xee)),
+        3:  ('Target Customer',             RGBColor(0xa7,0x8b,0xfa)),
+        4:  ('Competitive Landscape',       RGBColor(0xf8,0x71,0x71)),
+        5:  ('Strategy',                    RGBColor(0xfb,0xbf,0x24)),
+        6:  ('Business Model',              RGBColor(0xfb,0xbf,0x24)),
+        7:  ('Operations',                  RGBColor(0x34,0xd3,0x99)),
+        8:  ('MVP & Roadmap',               RGBColor(0x34,0xd3,0x99)),
+        9:  ('Risk Analysis',               RGBColor(0xf8,0x71,0x71)),
+        10: ('Go-to-Market',                RGBColor(0x81,0x8c,0xf8)),
+        11: ('Investment Attractiveness',   RGBColor(0x34,0xd3,0x99)),
+        12: ('Conclusion & Action',         RGBColor(0xfb,0xbf,0x24)),
+        13: ('Financial Projection',        RGBColor(0x34,0xd3,0x99)),
+        14: ('Execution Plan',              RGBColor(0x22,0xd3,0xee)),
+        15: ('VC Perspective',              RGBColor(0x81,0x8c,0xf8)),
+    }
+
     prs = Presentation()
     prs.slide_width  = Inches(13.33)
     prs.slide_height = Inches(7.5)
     BLANK = prs.slide_layouts[6]
     W, H = 13.33, 7.5
+    BYX = 1.72
+    CX1, CW1 = 0.45, 6.3
+    CX2, CW2 = 7.38, 5.5
 
     def add_rect(slide, l, t, w, h, fill, line_col=None):
         s = slide.shapes.add_shape(1, Inches(l), Inches(t), Inches(w), Inches(h))
@@ -634,24 +656,173 @@ def md_to_pptx(text: str, idea: str, theme: str = "dark") -> bytes:
         box.word_wrap = True
         tf = box.text_frame; tf.word_wrap = True
         p = tf.paragraphs[0]; p.alignment = align
-        r = p.add_run(); r.text = txt
+        r = p.add_run(); r.text = str(txt)
         r.font.size = Pt(sz); r.font.bold = bold
         r.font.color.rgb = col or MUTED
         return box
 
-    def add_bg(slide):
-        add_rect(slide, 0, 0, W, H, BG)
+    def add_bg(slide): add_rect(slide, 0, 0, W, H, BG)
+    def cdiv(slide): add_rect(slide, CX2-0.08, BYX, 0.02, H-BYX-0.15, DIVIDER)
 
-    # ── Title slide ──
-    s0 = prs.slides.add_slide(BLANK); add_bg(s0)
-    add_rect(s0, 0, 0, W, 0.07, BRAND)
-    add_rect(s0, W/2 - 0.5, 3.92, 1.0, 0.04, BRAND)
-    add_tb(s0, 'Pitch Deck', 1, 1.9, W-2, 0.42, sz=13, bold=True, col=ACCENTS[0], align=PP_ALIGN.CENTER)
-    add_tb(s0, idea, 1, 2.45, W-2, 1.3, sz=38, bold=True, col=TEXT, align=PP_ALIGN.CENTER)
-    add_tb(s0, 'Claude Opus  McKinsey/YC Level Analysis', 1, 4.1, W-2, 0.42, sz=11, col=MUTED, align=PP_ALIGN.CENTER)
+    def clean_md(s):
+        s = _re.sub(r'\*\*(.+?)\*\*', r'\1', str(s))
+        s = _re.sub(r'\*(.+?)\*', r'\1', s)
+        return s.strip()
+
+    def parse_num(s):
+        s = _re.sub(r'[,$\s]', '', str(s)).upper()
+        m = _re.match(r'([\d.]+)([BMK]?)', s)
+        if not m: return 0.0
+        return float(m.group(1)) * {'B':1e9,'M':1e6,'K':1e3}.get(m.group(2), 1.0)
+
+    def parse_struct(lines):
+        data = {}
+        for ln in lines:
+            ln = ln.strip()
+            if not ln.startswith('['): continue
+            m = _re.match(r'^\[(\w+):(.+)\]$', ln)
+            if m:
+                pairs = {}
+                for part in m.group(2).split(','):
+                    if '=' in part:
+                        k, _, v = part.partition('=')
+                        pairs[k.strip()] = v.strip()
+                data[m.group(1)] = pairs
+        return data
+
+    SKIP = _re.compile(r'^\[(MARKET|DIFFICULTY|INVESTMENT|REVENUE|CHANNELS):')
+
+    def parse_content(lines):
+        groups, kvs, bullets, grp = [], [], [], None
+        for ln in lines:
+            s = ln.strip()
+            if SKIP.match(s) or not s or s == '---': continue
+            if s.startswith('|'):
+                if _re.match(r'^\|[\s\-|:]+\|', s): continue
+                cells = [clean_md(c) for c in s.split('|')[1:-1] if c.strip()]
+                if cells: (grp['items'] if grp is not None else bullets).append('  |  '.join(cells)[:85])
+                continue
+            if s.startswith('## ') or s.startswith('### '):
+                grp = {'heading': clean_md(s.lstrip('#')), 'items': []}; groups.append(grp)
+            elif _re.match(r'^[-*] ', s):
+                item = clean_md(s[2:])
+                (grp['items'] if grp is not None else bullets).append(item)
+            elif ':' in s and not s.startswith('#'):
+                k, _, v = s.partition(':')
+                k = clean_md(k.lstrip('-')); v = clean_md(v)
+                if k and v and len(k) < 50:
+                    kvs.append({'k': k, 'v': v})
+                elif grp is not None: grp['items'].append(clean_md(s)[:85])
+                else: bullets.append(clean_md(s)[:85])
+            else:
+                t = clean_md(s)
+                if t and not t.startswith('#'):
+                    (grp['items'] if grp is not None else bullets).append(t)
+        return groups, kvs, bullets
+
+    # ── Shared renderers ──
+    def render_bullets(slide, items, x, y, w, ac, maxn=13):
+        cy = y
+        for it in (items or [])[:maxn]:
+            if cy > H-0.35: break
+            add_rect(slide, x, cy+0.072, 0.065, 0.065, ac)
+            add_tb(slide, (it[:90]+'...' if len(it)>90 else it), x+0.14, cy, w-0.14, 0.31, sz=10.5, col=TEXT2)
+            cy += 0.33
+        return cy
+
+    def render_groups(slide, groups, x, y, w, ac, maxitems=4):
+        cy = y
+        for g in (groups or []):
+            if cy > H-0.5: break
+            n = min(len(g.get('items') or []), maxitems)
+            ch = 0.33 + n*0.27 + 0.1
+            add_rect(slide, x, cy, w, ch, CARD_BG, DIVIDER)
+            if g.get('heading'):
+                add_tb(slide, g['heading'][:55], x+0.14, cy+0.07, w-0.28, 0.22, sz=8.5, bold=True, col=ac)
+            iy = cy+0.3
+            for it in (g.get('items') or [])[:maxitems]:
+                if iy > H-0.3: break
+                add_rect(slide, x+0.14, iy+0.075, 0.055, 0.055, ac)
+                add_tb(slide, (it[:78]+'...' if len(it)>78 else it), x+0.25, iy, w-0.4, 0.26, sz=10, col=TEXT2)
+                iy += 0.27
+            cy += ch+0.1
+        return cy
+
+    def render_kv(slide, kvs, x, y, w, ac, maxn=8):
+        cy = y
+        for kv in (kvs or [])[:maxn]:
+            if cy > H-0.4: break
+            add_rect(slide, x, cy, w, 0.36, CARD_BG, DIVIDER)
+            add_tb(slide, kv['k'][:38], x+0.13, cy+0.05, w*0.44, 0.27, sz=9.5, col=MUTED)
+            v = kv['v'][:46]+('...' if len(kv['v'])>46 else '')
+            add_tb(slide, v, x+w*0.46, cy+0.05, w*0.52, 0.27, sz=10, bold=True, col=ac)
+            cy += 0.42
+        return cy
+
+    def render_score_bars(slide, pairs, x, y, w, colors, max_score=10):
+        bar_x = x + w*0.38; bar_w = w*0.52; cy = y
+        for j, (label, score_s) in enumerate(pairs):
+            if cy > H-0.35: break
+            try: score = float(score_s)
+            except: score = 0.0
+            pct = min(score/max_score, 1.0)
+            clr = colors[j % len(colors)]
+            add_tb(slide, str(label)[:25], x, cy+0.045, w*0.36, 0.24, sz=9.5, col=MUTED)
+            add_rect(slide, bar_x, cy+0.1, bar_w, 0.08, DIVIDER)
+            if pct > 0: add_rect(slide, bar_x, cy+0.1, bar_w*pct, 0.08, clr)
+            score_disp = str(int(score)) if score == int(score) else str(score)
+            add_tb(slide, score_disp, bar_x+bar_w+0.1, cy+0.04, 0.4, 0.24, sz=10, bold=True, col=clr)
+            cy += 0.35
+        return cy
+
+    def render_mkt_bars(slide, items, x, y, w, max_n):
+        bar_x = x + w*0.46; bar_w = w*0.41; cy = y
+        for label, val_str, clr, val_n in items:
+            if cy > H-0.35: break
+            pct = min(val_n/max_n, 1.0) if max_n > 0 else 0
+            add_tb(slide, label, x, cy+0.04, w*0.44, 0.26, sz=9.5, col=TEXT2)
+            add_rect(slide, bar_x, cy+0.11, bar_w, 0.07, DIVIDER)
+            if pct > 0: add_rect(slide, bar_x, cy+0.11, bar_w*pct, 0.07, clr)
+            add_tb(slide, val_str, bar_x+bar_w+0.08, cy+0.04, w*0.13, 0.26, sz=9.5, bold=True, col=clr)
+            cy += 0.37
+        return cy
+
+    def render_year_bars(slide, pairs, nums, x, y, w, max_n, colors):
+        bar_x = x + w*0.22; bar_w = w*0.6; cy = y
+        for j, ((yr, val_s), val_n) in enumerate(zip(pairs, nums)):
+            if cy > H-0.35: break
+            pct = min(val_n/max_n, 1.0) if max_n > 0 else 0
+            clr = colors[j % len(colors)]
+            add_tb(slide, yr.upper(), x, cy+0.04, w*0.2, 0.26, sz=10, bold=True, col=clr)
+            add_rect(slide, bar_x, cy+0.11, bar_w, 0.07, DIVIDER)
+            if pct > 0: add_rect(slide, bar_x, cy+0.11, bar_w*pct, 0.07, clr)
+            add_tb(slide, val_s, bar_x+bar_w+0.08, cy+0.04, w*0.18, 0.26, sz=9.5, bold=True, col=clr)
+            cy += 0.34
+        return cy
+
+    def render_generic(slide, groups, kvs, bullets, ac):
+        bh = H-BYX-0.15
+        if len(groups) >= 3:
+            render_groups(slide, groups[:2], CX1, BYX, CW1, ac, 4)
+            cdiv(slide)
+            render_groups(slide, groups[2:4], CX2, BYX, CW2, ac, 4)
+        elif groups and kvs:
+            render_groups(slide, groups[:2], CX1, BYX, CW1, ac, 4)
+            cdiv(slide); render_kv(slide, kvs[:7], CX2, BYX, CW2, ac)
+        elif groups and bullets:
+            render_groups(slide, groups[:2], CX1, BYX, CW1, ac, 5)
+            cdiv(slide); render_bullets(slide, bullets[:11], CX2, BYX, CW2, ac)
+        elif groups:
+            render_groups(slide, groups, CX1, BYX, W-0.9, ac, 4)
+        elif kvs and bullets:
+            render_kv(slide, kvs[:7], CX1, BYX, CW1, ac)
+            cdiv(slide); render_bullets(slide, bullets[:11], CX2, BYX, CW2, ac)
+        elif kvs:
+            render_kv(slide, kvs[:9], CX1, BYX, W-0.9, ac)
+        else:
+            render_bullets(slide, bullets[:14], CX1, BYX, W-0.9, ac)
 
     # ── Parse sections ──
-    SKIP = _re.compile(r'^\[(MARKET|DIFFICULTY|INVESTMENT|REVENUE|CHANNELS):')
     secs = []
     cur = None
     for line in text.split('\n'):
@@ -663,127 +834,110 @@ def md_to_pptx(text: str, idea: str, theme: str = "dark") -> bytes:
             cur['lines'].append(line)
     if cur: secs.append(cur)
 
-    def clean_md(s):
-        s = _re.sub(r'\*\*(.+?)\*\*', r'\1', s)
-        s = _re.sub(r'\*(.+?)\*', r'\1', s)
-        return s.strip()
+    # ── Title slide ──
+    s0 = prs.slides.add_slide(BLANK); add_bg(s0)
+    add_rect(s0, 0, 0, W, 0.07, BRAND)
+    add_rect(s0, W/2-0.5, 3.92, 1.0, 0.04, BRAND)
+    add_tb(s0, 'Pitch Deck', 1, 1.9, W-2, 0.42, sz=13, bold=True, col=ACCENTS[0], align=PP_ALIGN.CENTER)
+    add_tb(s0, idea, 1, 2.45, W-2, 1.3, sz=38, bold=True, col=TEXT, align=PP_ALIGN.CENTER)
+    add_tb(s0, 'Claude Opus  McKinsey/YC Level Analysis', 1, 4.1, W-2, 0.42, sz=11, col=MUTED, align=PP_ALIGN.CENTER)
 
-    def parse_content(lines):
-        groups, kvs, bullets, grp = [], [], [], None
-        for ln in lines:
-            stripped = ln.strip()
-            if SKIP.match(stripped) or not stripped or stripped == '---':
-                continue
-            # Catch ALL table lines: |...|, including |---|---|--- separators
-            if stripped.startswith('|'):
-                if _re.match(r'^\|[\s\-|:]+\|', stripped):  # separator row
-                    continue
-                cells = [clean_md(c) for c in stripped.split('|')[1:-1] if c.strip()]
-                if cells:
-                    (grp['items'] if grp is not None else bullets).append(
-                        '  |  '.join(cells)[:85])
-                continue
-            if stripped.startswith('## ') or stripped.startswith('### '):
-                grp = {'heading': clean_md(stripped.lstrip('#')), 'items': []}
-                groups.append(grp)
-            elif _re.match(r'^[-*] ', stripped):
-                item = clean_md(stripped[2:])
-                (grp['items'] if grp is not None else bullets).append(item)
-            elif ':' in stripped and not stripped.startswith('#'):
-                k, _, v = stripped.partition(':')
-                k = clean_md(k.lstrip('-')); v = clean_md(v)
-                if k and v and len(k) < 50:
-                    kvs.append({'k': k, 'v': v})
-                elif grp is not None:
-                    grp['items'].append(clean_md(stripped)[:85])
-                else:
-                    bullets.append(clean_md(stripped)[:85])
-            else:
-                t = clean_md(stripped)
-                if t and not t.startswith('#'):
-                    (grp['items'] if grp is not None else bullets).append(t)
-        return groups, kvs, bullets
-
-    # Layout constants
-    BYX = 1.72                    # body area start y
-    CX1, CW1 = 0.45, 6.3         # left column x, width
-    CX2, CW2 = 7.38, 5.5         # right column x, width
-
-    def render_bullets(slide, items, x, y, w, ac, maxn=13):
-        cy = y
-        for it in (items or [])[:maxn]:
-            if cy > H - 0.35: break
-            add_rect(slide, x, cy+0.072, 0.065, 0.065, ac)
-            add_tb(slide, (it[:90]+'...' if len(it)>90 else it), x+0.14, cy, w-0.14, 0.31, sz=10.5, col=TEXT2)
-            cy += 0.33
-
-    def render_groups(slide, groups, x, y, w, ac, maxitems=4):
-        cy = y
-        for g in (groups or []):
-            if cy > H - 0.5: break
-            n = min(len(g.get('items') or []), maxitems)
-            ch = 0.33 + n * 0.27 + 0.1
-            add_rect(slide, x, cy, w, ch, CARD_BG, DIVIDER)
-            if g.get('heading'):
-                add_tb(slide, g['heading'][:55], x+0.14, cy+0.07, w-0.28, 0.22, sz=8.5, bold=True, col=ac)
-            iy = cy + 0.3
-            for it in (g.get('items') or [])[:maxitems]:
-                if iy > H - 0.3: break
-                add_rect(slide, x+0.14, iy+0.075, 0.055, 0.055, ac)
-                add_tb(slide, (it[:78]+'...' if len(it)>78 else it), x+0.25, iy, w-0.4, 0.26, sz=10, col=TEXT2)
-                iy += 0.27
-            cy += ch + 0.1
-
-    def render_kv(slide, kvs, x, y, w, ac, maxn=8):
-        cy = y
-        for kv in (kvs or [])[:maxn]:
-            if cy > H - 0.4: break
-            add_rect(slide, x, cy, w, 0.36, CARD_BG, DIVIDER)
-            add_tb(slide, kv['k'][:38], x+0.13, cy+0.05, w*0.44, 0.27, sz=9.5, col=MUTED)
-            v = (kv['v'][:46]+'...' if len(kv['v'])>46 else kv['v'])
-            add_tb(slide, v, x+w*0.46, cy+0.05, w*0.52, 0.27, sz=10, bold=True, col=ac)
-            cy += 0.42
-
-    def col_divider(slide, x, y, bh):
-        add_rect(slide, x, y, 0.02, bh, DIVIDER)
+    INV_COLORS  = [RGBColor(0x81,0x8c,0xf8),RGBColor(0x34,0xd3,0x99),RGBColor(0xfb,0xbf,0x24),
+                   RGBColor(0xa7,0x8b,0xfa),RGBColor(0x22,0xd3,0xee),RGBColor(0xf8,0x71,0x71),RGBColor(0x63,0x66,0xf1)]
+    DIFF_COLORS = [RGBColor(0xf8,0x71,0x71),RGBColor(0xa7,0x8b,0xfa),RGBColor(0xfb,0xbf,0x24),
+                   RGBColor(0x22,0xd3,0xee),RGBColor(0x63,0x66,0xf1)]
+    REV_COLORS  = [RGBColor(0x34,0xd3,0x99),RGBColor(0x81,0x8c,0xf8),RGBColor(0xfb,0xbf,0x24),
+                   RGBColor(0xa7,0x8b,0xfa),RGBColor(0x63,0x66,0xf1)]
+    CH_COLORS   = [RGBColor(0x81,0x8c,0xf8),RGBColor(0x34,0xd3,0x99),RGBColor(0xfb,0xbf,0x24),
+                   RGBColor(0xf8,0x71,0x71),RGBColor(0x22,0xd3,0xee)]
+    KPI_COLORS  = [RGBColor(0x81,0x8c,0xf8),RGBColor(0xa7,0x8b,0xfa),RGBColor(0x34,0xd3,0x99)]
 
     for i, sec in enumerate(secs):
-        ac = ACCENTS[i % len(ACCENTS)]
-        slide = prs.slides.add_slide(BLANK); add_bg(slide)
-        groups, kvs, bullets = parse_content(sec['lines'])
-        bh = H - BYX - 0.15
+        num = sec['num']
+        tag_label, ac = SEC_META.get(num, (f"SECTION {num}", ACCENTS[i % len(ACCENTS)]))
 
-        # Accent top bar
+        struct  = parse_struct(sec['lines'])
+        groups, kvs, bullets = parse_content(sec['lines'])
+
+        slide = prs.slides.add_slide(BLANK); add_bg(slide)
         add_rect(slide, 0, 0, W, 0.07, ac)
-        # Header / body separator
         add_rect(slide, 0, 1.65, W, 0.02, DIVIDER)
-        # Tag label (small caps accent)
-        add_tb(slide, f"SECTION {sec['num']}", 0.5, 0.19, 4, 0.3, sz=9, bold=True, col=ac)
-        # Section title
+        add_tb(slide, f"● {tag_label.upper()}", 0.5, 0.19, 9, 0.3, sz=9, bold=True, col=ac)
         add_tb(slide, sec['title'], 0.5, 0.5, W-1.0, 1.12, sz=22, bold=True, col=TEXT)
 
-        if len(groups) >= 3:
-            render_groups(slide, groups[:2], CX1, BYX, CW1, ac, 4)
-            col_divider(slide, CX2-0.08, BYX, bh)
-            render_groups(slide, groups[2:4], CX2, BYX, CW2, ac, 4)
-        elif groups and kvs:
-            render_groups(slide, groups[:2], CX1, BYX, CW1, ac, 4)
-            col_divider(slide, CX2-0.08, BYX, bh)
-            render_kv(slide, kvs[:7], CX2, BYX, CW2, ac)
-        elif groups and bullets:
-            render_groups(slide, groups[:2], CX1, BYX, CW1, ac, 5)
-            col_divider(slide, CX2-0.08, BYX, bh)
-            render_bullets(slide, bullets[:11], CX2, BYX, CW2, ac)
-        elif groups:
-            render_groups(slide, groups, CX1, BYX, W-0.9, ac, 4)
-        elif kvs and bullets:
-            render_kv(slide, kvs[:7], CX1, BYX, CW1, ac)
-            col_divider(slide, CX2-0.08, BYX, bh)
-            render_bullets(slide, bullets[:11], CX2, BYX, CW2, ac)
-        elif kvs:
-            render_kv(slide, kvs[:9], CX1, BYX, W-0.9, ac)
+        # ── Market (section 2) ──
+        if num == 2 and 'MARKET' in struct:
+            mkt = struct['MARKET']
+            tam_s = mkt.get('TAM','?'); sam_s = mkt.get('SAM','?'); som_s = mkt.get('SOM','?')
+            tam_n = parse_num(tam_s); sam_n = parse_num(sam_s); som_n = parse_num(som_s)
+            max_n = max(tam_n, 1)
+            kw = (CW1 - 0.2) / 3
+            for j, (kl, ks, kc) in enumerate(zip(
+                    ['TAM','SAM','SOM'],
+                    [f'${tam_s.lstrip("$")}', f'${sam_s.lstrip("$")}', f'${som_s.lstrip("$")}'],
+                    KPI_COLORS)):
+                bx = CX1 + j*(kw+0.1)
+                add_rect(slide, bx, BYX, kw, 0.75, CARD_BG, DIVIDER)
+                add_tb(slide, ks, bx, BYX+0.06, kw, 0.46, sz=20, bold=True, col=kc, align=PP_ALIGN.CENTER)
+                add_tb(slide, kl, bx, BYX+0.52, kw, 0.2,  sz=9,  col=MUTED, align=PP_ALIGN.CENTER)
+            grp_y = BYX + 0.87
+            render_groups(slide, groups[:1], CX1, grp_y, CW1, ac, 4)
+            cdiv(slide)
+            bar_end = render_mkt_bars(slide, [
+                ('TAM Total',       f'${tam_s.lstrip("$")}', KPI_COLORS[0], tam_n),
+                ('SAM Serviceable', f'${sam_s.lstrip("$")}', KPI_COLORS[1], sam_n),
+                ('SOM Obtainable',  f'${som_s.lstrip("$")}', KPI_COLORS[2], som_n),
+            ], CX2, BYX, CW2, max_n)
+            render_groups(slide, groups[1:2], CX2, bar_end+0.1, CW2, ac, 3)
+
+        # ── Investment attractiveness (section 11) ──
+        elif num == 11 and 'INVESTMENT' in struct:
+            pairs = list(struct['INVESTMENT'].items())
+            render_score_bars(slide, pairs, CX1, BYX, CW1, INV_COLORS)
+            cdiv(slide)
+            render_groups(slide, groups[:2], CX2, BYX, CW2, ac, 4)
+
+        # ── Financial projection (section 13) ──
+        elif num == 13 and 'REVENUE' in struct:
+            rev = struct['REVENUE']
+            yr_pairs = sorted([(k,v) for k,v in rev.items() if k.upper().startswith('Y') and k.upper()!='UNIT'],
+                               key=lambda p: p[0])
+            yr_nums  = [parse_num(v) for _,v in yr_pairs]
+            max_yr   = max(yr_nums) if yr_nums else 1
+            if yr_pairs:
+                render_year_bars(slide, yr_pairs, yr_nums, CX1, BYX, CW1, max_yr, REV_COLORS)
+                cdiv(slide)
+                render_groups(slide, groups[:2], CX2, BYX, CW2, ac, 4)
+            else:
+                render_generic(slide, groups, kvs, bullets, ac)
+
+        # ── VC perspective / difficulty (section 15) ──
+        elif num == 15 and 'DIFFICULTY' in struct:
+            pairs = list(struct['DIFFICULTY'].items())
+            render_score_bars(slide, pairs, CX1, BYX, CW1, DIFF_COLORS)
+            cdiv(slide)
+            render_groups(slide, groups[:2], CX2, BYX, CW2, ac, 4)
+
+        # ── Channels / Go-to-market (section 10) ──
+        elif num == 10 and 'CHANNELS' in struct:
+            ch_pairs = list(struct['CHANNELS'].items())
+            total = sum(parse_num(v) for _,v in ch_pairs) or 100
+            bar_x = CX1 + CW1*0.55; bar_w = CW1*0.37; cy = BYX
+            for j, (label, val_s) in enumerate(ch_pairs):
+                if cy > H-0.35: break
+                clr = CH_COLORS[j % len(CH_COLORS)]
+                pct = min(parse_num(val_s)/total, 1.0)
+                add_tb(slide, str(label)[:30], CX1, cy+0.04, CW1*0.53, 0.26, sz=10, col=TEXT2)
+                add_rect(slide, bar_x, cy+0.11, bar_w, 0.07, DIVIDER)
+                if pct > 0: add_rect(slide, bar_x, cy+0.11, bar_w*pct, 0.07, clr)
+                add_tb(slide, f'{val_s}%', bar_x+bar_w+0.08, cy+0.04, 0.7, 0.26, sz=10, bold=True, col=clr)
+                cy += 0.34
+            cdiv(slide)
+            render_groups(slide, groups[:2], CX2, BYX, CW2, ac, 4)
+
+        # ── Generic layout ──
         else:
-            render_bullets(slide, bullets[:14], CX1, BYX, W-0.9, ac)
+            render_generic(slide, groups, kvs, bullets, ac)
 
     buf = io.BytesIO()
     prs.save(buf); buf.seek(0)
