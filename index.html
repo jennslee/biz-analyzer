@@ -61,7 +61,11 @@ html.light .md-table td{color:#334155;border-color:rgba(0,0,0,.08)}
 html.light .md-code{background:#f1f5f9;color:#1e293b}
 /* Light mode — stat/score elements */
 html.light .sec-number{color:#fff}
-html.light .sec-title{color:#fff}
+html.light .sec-title{color:#1e293b}
+html.light .sec-toggle{color:#475569}
+html.light .sec-card{border-color:rgba(0,0,0,.1);background:#fff}
+html.light .sec-card:hover{border-color:rgba(0,0,0,.2)}
+html.light .sec-card-header::after{background:linear-gradient(90deg,rgba(99,102,241,.25),transparent)}
 html.light .stat-tile{background:#eef2ff;border-color:rgba(99,102,241,.25)}
 html.light .stat-tile-label{color:#475569}
 html.light .stat-tile-val{color:#1e293b}
@@ -70,13 +74,75 @@ html.light .score-val{color:#3730a3}
 /* Light mode — misc */
 html.light .toggle-btn{background:rgba(0,0,0,.12)}
 html.light .toggle-label{color:#1e293b}
-html.light .field-label{color:#64748b}
+html.light .field-label{color:#475569}
 html.light .divider{background:rgba(0,0,0,.1)}
 html.light #token-info{color:#475569}
 html.light .history-item{background:#fff;border-color:rgba(0,0,0,.1)}
 html.light .history-item:hover{background:#f8fafc;border-color:rgba(99,102,241,.35)}
+html.light .hi-idea{color:#1e293b}
+html.light .hi-meta{color:#475569}
+html.light .hi-tag{background:rgba(0,0,0,.06);color:#475569}
+html.light .history-empty{color:#475569}
 html.light .history-meta{color:#475569}
 html.light .btn-export{filter:brightness(.85)}
+/* Light mode — result cards */
+html.light .result-card,.html.light .sec-card{border-color:rgba(0,0,0,.1)}
+html.light .sec-card[data-num]{background:linear-gradient(160deg,rgba(99,102,241,.05),rgba(241,245,249,0) 60%)}
+html.light .sec-card[data-num="2"]{background:linear-gradient(160deg,rgba(6,182,212,.06),rgba(241,245,249,0) 60%)}
+html.light .sec-card[data-num="3"]{background:linear-gradient(160deg,rgba(109,40,217,.05),rgba(241,245,249,0) 60%)}
+html.light .sec-card[data-num="4"]{background:linear-gradient(160deg,rgba(220,38,38,.05),rgba(241,245,249,0) 60%)}
+html.light .sec-card[data-num="5"]{background:linear-gradient(160deg,rgba(146,64,14,.04),rgba(241,245,249,0) 60%)}
+html.light .sec-card[data-num="12"]{background:linear-gradient(160deg,rgba(146,64,14,.06),rgba(99,102,241,.04) 60%);border-color:rgba(146,64,14,.2)}
+html.light .sec-card[data-num="15"]{background:linear-gradient(160deg,rgba(55,48,163,.07),rgba(109,40,217,.05) 60%);border-color:rgba(55,48,163,.2)}
+html.light .sec-header{background:transparent;border-bottom:1px solid rgba(0,0,0,.08)}
+/* Light mode — markdown text */
+html.light strong{color:#1e293b}
+html.light em{color:#334155}
+html.light .md-h1{color:#1e293b;border-bottom-color:rgba(0,0,0,.1)}
+html.light .md-h2{color:#3730a3}
+html.light .md-h3{color:#6d28d9}
+html.light .md-p{color:#334155}
+html.light .md-ul li{color:#334155}
+html.light .md-ul li::before{background:#6366f1}
+html.light .md-hr{border-top-color:rgba(0,0,0,.1)}
+html.light .md-code{background:rgba(0,0,0,.06);color:#3730a3}
+/* Light mode — tables */
+html.light .tbl-wrap{border-color:rgba(0,0,0,.12)}
+html.light table th{color:#1e293b;background:rgba(0,0,0,.04);border-bottom-color:rgba(0,0,0,.1)}
+html.light table td{color:#334155;border-bottom-color:rgba(0,0,0,.06)}
+html.light table tr:hover td{background:rgba(0,0,0,.02)}
+/* Light mode — score/channel bars */
+html.light .score-label{color:#475569}
+html.light .score-track{background:rgba(0,0,0,.08)}
+html.light .score-val{color:#1e293b}
+html.light .ch-label{color:#475569}
+html.light .ch-track{background:rgba(0,0,0,.08)}
+html.light .ch-val{color:#475569}
+/* Light mode — stat tiles */
+html.light .stat-tile{background:#fff;border-color:rgba(0,0,0,.1)}
+html.light .stat-tile-val{color:#1e293b}
+html.light .stat-tile-label{color:#475569}
+/* Light mode — phase timeline */
+html.light .phase-step{background:#fff;border-color:rgba(0,0,0,.1)}
+html.light .phase-title{color:#1e293b}
+html.light .phase-body{color:#475569}
+/* Light mode — verdict */
+html.light .verdict-card{background:linear-gradient(135deg,rgba(146,64,14,.05),rgba(99,102,241,.04));border-color:rgba(146,64,14,.2)}
+html.light .verdict-text{color:#475569}
+/* Light mode — charts */
+html.light .chart-wrap{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.08)}
+html.light .chart-title{color:#475569}
+/* Light mode — SWOT */
+html.light .swot-s{background:rgba(4,120,87,.05);border-color:rgba(4,120,87,.2)}
+html.light .swot-w{background:rgba(220,38,38,.05);border-color:rgba(220,38,38,.2)}
+html.light .swot-o{background:rgba(55,48,163,.05);border-color:rgba(55,48,163,.2)}
+html.light .swot-t{background:rgba(146,64,14,.05);border-color:rgba(146,64,14,.2)}
+/* Light mode — usage bar */
+html.light .usage-strip{background:rgba(0,0,0,.025);border-color:rgba(0,0,0,.1);color:#475569}
+html.light .usage-strip span{color:#475569}
+/* Light mode — stream card */
+html.light .stream-card{background:#fff;border-color:rgba(0,0,0,.1)}
+html.light .stream-header{border-bottom-color:rgba(0,0,0,.08)}
 
 /* ── Header ── */
 .topbar{display:flex;align-items:center;justify-content:space-between;
@@ -176,6 +242,10 @@ select.field-select option{background:#1a1a2e;color:var(--text)}
   display:flex;align-items:center;justify-content:center;margin-bottom:4px}
 .empty-title{font-size:15px;font-weight:600;color:#d1d5db}
 .empty-sub{font-size:12px;line-height:1.6;max-width:320px}
+html.light .empty-title{color:#1e293b}
+html.light .empty-sub{color:#475569}
+html.light .empty-icon{background:rgba(0,0,0,.04);border-color:rgba(0,0,0,.15)}
+html.light .empty-icon svg{stroke:#475569}
 
 /* ── streaming view ── */
 .stream-card{background:var(--s1);border:1px solid var(--border);border-radius:16px;overflow:hidden}
@@ -1128,7 +1198,7 @@ async function downloadDoc(){
   const idea=btn.dataset.idea||'사업 분석'
   const orig=btn.innerHTML; btn.textContent='생성 중…'; btn.disabled=true
   try {
-    const res=await fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:S.fullText,idea})})
+    const res=await fetch('/api/export',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:S.fullText,idea,theme:document.documentElement.classList.contains('light')?'light':'dark'})})
     if(!res.ok) throw new Error('Export 실패')
     const blob=await res.blob(); const url=URL.createObjectURL(blob)
     const a=document.createElement('a'); a.href=url; a.download='biz-analysis.docx'; a.click(); URL.revokeObjectURL(url)
@@ -1141,7 +1211,7 @@ async function downloadPpt(){
   const idea=btn.dataset.idea||'사업 분석'
   const orig=btn.innerHTML; btn.textContent='생성 중…'; btn.disabled=true
   try {
-    const res=await fetch('/api/export/ppt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:S.fullText,idea})})
+    const res=await fetch('/api/export/ppt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:S.fullText,idea,theme:document.documentElement.classList.contains('light')?'light':'dark'})})
     if(!res.ok) throw new Error('PPT Export 실패')
     const blob=await res.blob(); const url=URL.createObjectURL(blob)
     const a=document.createElement('a'); a.href=url; a.download='biz-analysis.pptx'; a.click(); URL.revokeObjectURL(url)
@@ -2215,7 +2285,7 @@ async function downloadPitchPpt(){
   const btn=document.querySelector('.pitch-btn-ppt')
   const orig=btn.innerHTML; btn.textContent='생성 중…'; btn.disabled=true
   try {
-    const res=await fetch('/api/export/ppt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:S.fullText,idea})})
+    const res=await fetch('/api/export/ppt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:S.fullText,idea,theme:document.documentElement.classList.contains('light')?'light':'dark'})})
     if(!res.ok) throw new Error('실패')
     const blob=await res.blob(); const url=URL.createObjectURL(blob)
     const a=document.createElement('a'); a.href=url; a.download='pitch-deck.pptx'; a.click(); URL.revokeObjectURL(url)

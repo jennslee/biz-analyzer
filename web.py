@@ -481,12 +481,34 @@ def build_context(body: AnalyzeRequest) -> str:
 
 # ── DOC Export ────────────────────────────────────────────────────────────────
 
-def md_to_docx(text: str, idea: str) -> bytes:
+def md_to_docx(text: str, idea: str, theme: str = "dark") -> bytes:
     from docx import Document
     from docx.shared import Pt, Cm, RGBColor
     from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml.ns import qn
+    from docx.oxml import OxmlElement
+
+    is_light = theme == "light"
+    COLOR_TEXT   = RGBColor(0x1e, 0x29, 0x3b) if is_light else RGBColor(0xe2, 0xe8, 0xf0)
+    COLOR_MUTED  = RGBColor(0x47, 0x55, 0x69) if is_light else RGBColor(0x6b, 0x72, 0x80)
+    COLOR_ACCENT = RGBColor(0x37, 0x30, 0xa3) if is_light else RGBColor(0x81, 0x8c, 0xf8)
+    BG_HEX       = "F1F5F9" if is_light else "07070F"
 
     doc = Document()
+
+    # Set page background color
+    bg = doc.settings.element
+    bg_elem = OxmlElement('w:displayBackgroundShape')
+    bg.append(bg_elem)
+    body_bg = doc.element.body
+    sectPr = body_bg.find(qn('w:sectPr'))
+    if sectPr is None:
+        sectPr = OxmlElement('w:sectPr')
+        body_bg.append(sectPr)
+    bg_color = OxmlElement('w:background')
+    bg_color.set(qn('w:color'), BG_HEX)
+    doc.element.insert(0, bg_color)
+
     for sec in doc.sections:
         sec.left_margin = Cm(2.5)
         sec.right_margin = Cm(2.5)
@@ -495,11 +517,13 @@ def md_to_docx(text: str, idea: str) -> bytes:
 
     h = doc.add_heading("사업구상 분석 리포트", 0)
     h.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    if h.runs:
+        h.runs[0].font.color.rgb = COLOR_ACCENT
     sub = doc.add_paragraph(f"분석 대상: {idea}")
     sub.alignment = WD_ALIGN_PARAGRAPH.CENTER
     if sub.runs:
         sub.runs[0].font.size = Pt(12)
-        sub.runs[0].font.color.rgb = RGBColor(0x6b, 0x72, 0x80)
+        sub.runs[0].font.color.rgb = COLOR_MUTED
     doc.add_paragraph()
 
     lines = text.split("\n")
@@ -530,23 +554,33 @@ def md_to_docx(text: str, idea: str) -> bytes:
                 doc.add_paragraph()
             continue
 
+        def set_run_color(run, color):
+            run.font.color.rgb = color
+
         if line.startswith("# "):
-            doc.add_heading(line[2:], level=1)
+            p = doc.add_heading(line[2:], level=1)
+            for r in p.runs: set_run_color(r, COLOR_ACCENT)
         elif line.startswith("## "):
-            doc.add_heading(line[3:], level=2)
+            p = doc.add_heading(line[3:], level=2)
+            for r in p.runs: set_run_color(r, COLOR_ACCENT)
         elif line.startswith("### "):
-            doc.add_heading(line[4:], level=3)
+            p = doc.add_heading(line[4:], level=3)
+            for r in p.runs: set_run_color(r, COLOR_MUTED)
         elif line == "---":
             doc.add_paragraph()
         elif re.match(r"^[-*] ", line):
-            doc.add_paragraph(line[2:], style="List Bullet")
+            p = doc.add_paragraph(line[2:], style="List Bullet")
+            for r in p.runs: set_run_color(r, COLOR_TEXT)
         elif line.strip():
             para = doc.add_paragraph()
             for part in re.split(r"(\*\*.+?\*\*)", line):
                 if part.startswith("**") and part.endswith("**"):
-                    para.add_run(part[2:-2]).bold = True
+                    run = para.add_run(part[2:-2])
+                    run.bold = True
+                    set_run_color(run, COLOR_TEXT)
                 elif part:
-                    para.add_run(part)
+                    run = para.add_run(part)
+                    set_run_color(run, COLOR_TEXT)
         i += 1
 
     buf = io.BytesIO()
@@ -555,12 +589,14 @@ def md_to_docx(text: str, idea: str) -> bytes:
     return buf.read()
 
 
-def md_to_pptx(text: str, idea: str) -> bytes:
+def md_to_pptx(text: str, idea: str, theme: str = "dark") -> bytes:
     from pptx import Presentation
     from pptx.util import Inches, Pt, Emu
     from pptx.dml.color import RGBColor
     from pptx.enum.text import PP_ALIGN
     import re as _re
+
+    is_light = theme == "light"
 
     prs = Presentation()
     prs.slide_width  = Inches(13.33)
@@ -568,11 +604,11 @@ def md_to_pptx(text: str, idea: str) -> bytes:
 
     BLANK = prs.slide_layouts[6]
 
-    BG    = RGBColor(0x07, 0x07, 0x0f)
-    WHITE = RGBColor(0xff, 0xff, 0xff)
+    BG    = RGBColor(0xf1, 0xf5, 0xf9) if is_light else RGBColor(0x07, 0x07, 0x0f)
+    WHITE = RGBColor(0x1e, 0x29, 0x3b) if is_light else RGBColor(0xff, 0xff, 0xff)
     BRAND = RGBColor(0x63, 0x66, 0xf1)
-    MUTED = RGBColor(0x6b, 0x72, 0x80)
-    GRAY  = RGBColor(0x9c, 0xa3, 0xaf)
+    MUTED = RGBColor(0x47, 0x55, 0x69) if is_light else RGBColor(0x6b, 0x72, 0x80)
+    GRAY  = RGBColor(0x33, 0x41, 0x55) if is_light else RGBColor(0x9c, 0xa3, 0xaf)
 
     SEC_ICONS = ['💡','📊','👥','⚔️','🎯','💰','🔥','🚀','✨','📣','💎','🏆','📈','🌍','🏦']
 
@@ -697,12 +733,13 @@ def md_to_pptx(text: str, idea: str) -> bytes:
 class ExportRequest(BaseModel):
     text: str
     idea: str = "사업 분석"
+    theme: str = "dark"
 
 
 @app.post("/api/export")
 async def export_doc(body: ExportRequest):
     try:
-        docx_bytes = await asyncio.to_thread(md_to_docx, body.text, body.idea)
+        docx_bytes = await asyncio.to_thread(md_to_docx, body.text, body.idea, body.theme)
         return Response(
             content=docx_bytes,
             media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -717,7 +754,7 @@ async def export_doc(body: ExportRequest):
 @app.post("/api/export/ppt")
 async def export_ppt(body: ExportRequest):
     try:
-        pptx_bytes = await asyncio.to_thread(md_to_pptx, body.text, body.idea)
+        pptx_bytes = await asyncio.to_thread(md_to_pptx, body.text, body.idea, body.theme)
         return Response(
             content=pptx_bytes,
             media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
