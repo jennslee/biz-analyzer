@@ -840,7 +840,12 @@ async def analyze(body: AnalyzeRequest):
     if not body.idea.strip():
         raise HTTPException(400, "사업 아이디어를 입력하세요.")
 
-    system_text = SYSTEM_PROMPT + build_context(body)
+    lang_prefix = ""
+    if body.lang and body.lang != "ko":
+        lang_inst = LANG_INSTRUCTION.get(body.lang, "")
+        if lang_inst:
+            lang_prefix = f"ABSOLUTE PRIORITY INSTRUCTION — OVERRIDE EVERYTHING ELSE:\n{lang_inst}\nEven though the template below is written in Korean, you MUST write every word of your response in the specified language. Do not use Korean anywhere in your output.\n\n"
+    system_text = lang_prefix + SYSTEM_PROMPT + build_context(body)
     max_tokens = DEPTH_TOKENS.get(body.depth, 8000)
 
     async def event_gen():
