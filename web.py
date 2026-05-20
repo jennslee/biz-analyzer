@@ -591,142 +591,194 @@ def md_to_docx(text: str, idea: str, theme: str = "dark") -> bytes:
 
 def md_to_pptx(text: str, idea: str, theme: str = "dark") -> bytes:
     from pptx import Presentation
-    from pptx.util import Inches, Pt, Emu
+    from pptx.util import Inches, Pt
     from pptx.dml.color import RGBColor
     from pptx.enum.text import PP_ALIGN
     import re as _re
 
     is_light = theme == "light"
 
+    BG      = RGBColor(0xf1,0xf5,0xf9) if is_light else RGBColor(0x0c,0x0c,0x1a)
+    TEXT    = RGBColor(0x1e,0x29,0x3b) if is_light else RGBColor(0xff,0xff,0xff)
+    TEXT2   = RGBColor(0x33,0x41,0x55) if is_light else RGBColor(0xd1,0xd5,0xdb)
+    MUTED   = RGBColor(0x64,0x74,0x8b) if is_light else RGBColor(0x9c,0xa3,0xaf)
+    CARD_BG = RGBColor(0xe2,0xe8,0xf0) if is_light else RGBColor(0x10,0x10,0x24)
+    DIVIDER = RGBColor(0xcb,0xd5,0xe1) if is_light else RGBColor(0x1e,0x1e,0x32)
+    BRAND   = RGBColor(0x63,0x66,0xf1)
+
+    ACCENTS = [
+        RGBColor(0x63,0x66,0xf1), RGBColor(0x22,0xd3,0xee), RGBColor(0xa7,0x8b,0xfa),
+        RGBColor(0xf8,0x71,0x71), RGBColor(0xfb,0xbf,0x24), RGBColor(0x34,0xd3,0x99),
+        RGBColor(0xf8,0x71,0x71), RGBColor(0x63,0x66,0xf1), RGBColor(0xa7,0x8b,0xfa),
+        RGBColor(0x22,0xd3,0xee), RGBColor(0x34,0xd3,0x99), RGBColor(0xfb,0xbf,0x24),
+    ]
+
     prs = Presentation()
     prs.slide_width  = Inches(13.33)
     prs.slide_height = Inches(7.5)
-
     BLANK = prs.slide_layouts[6]
+    W, H = 13.33, 7.5
 
-    BG    = RGBColor(0xf1, 0xf5, 0xf9) if is_light else RGBColor(0x07, 0x07, 0x0f)
-    WHITE = RGBColor(0x1e, 0x29, 0x3b) if is_light else RGBColor(0xff, 0xff, 0xff)
-    BRAND = RGBColor(0x63, 0x66, 0xf1)
-    MUTED = RGBColor(0x47, 0x55, 0x69) if is_light else RGBColor(0x6b, 0x72, 0x80)
-    GRAY  = RGBColor(0x33, 0x41, 0x55) if is_light else RGBColor(0x9c, 0xa3, 0xaf)
+    def add_rect(slide, l, t, w, h, fill, line_col=None):
+        s = slide.shapes.add_shape(1, Inches(l), Inches(t), Inches(w), Inches(h))
+        s.fill.solid(); s.fill.fore_color.rgb = fill
+        if line_col:
+            s.line.fill.solid(); s.line.fill.fore_color.rgb = line_col
+            s.line.width = Pt(0.75)
+        else:
+            s.line.fill.background()
+        return s
 
-    SEC_ICONS = ['💡','📊','👥','⚔️','🎯','💰','🔥','🚀','✨','📣','💎','🏆','📈','🌍','🏦']
+    def add_tb(slide, txt, l, t, w, h, sz=11, bold=False, col=None, align=PP_ALIGN.LEFT):
+        box = slide.shapes.add_textbox(Inches(l), Inches(t), Inches(w), Inches(h))
+        box.word_wrap = True
+        tf = box.text_frame; tf.word_wrap = True
+        p = tf.paragraphs[0]; p.alignment = align
+        r = p.add_run(); r.text = txt
+        r.font.size = Pt(sz); r.font.bold = bold
+        r.font.color.rgb = col or MUTED
+        return box
 
     def add_bg(slide):
-        bg = slide.shapes.add_shape(1, 0, 0, prs.slide_width, prs.slide_height)
-        bg.fill.solid(); bg.fill.fore_color.rgb = BG
-        bg.line.fill.background()
-
-    def add_textbox(slide, text, l, t, w, h, size=11, bold=False, color=None, align=PP_ALIGN.LEFT, wrap=True):
-        txb = slide.shapes.add_textbox(Inches(l), Inches(t), Inches(w), Inches(h))
-        txb.word_wrap = wrap
-        tf = txb.text_frame; tf.word_wrap = wrap
-        p = tf.paragraphs[0]
-        p.alignment = align
-        run = p.add_run(); run.text = text
-        run.font.size = Pt(size); run.font.bold = bold
-        run.font.color.rgb = color or GRAY
-        return txb
-
-    def add_rect(slide, l, t, w, h, fill_rgb, alpha=None):
-        shape = slide.shapes.add_shape(1, Inches(l), Inches(t), Inches(w), Inches(h))
-        shape.fill.solid(); shape.fill.fore_color.rgb = fill_rgb
-        shape.line.fill.background()
-        return shape
+        add_rect(slide, 0, 0, W, H, BG)
 
     # ── Title slide ──
-    slide = prs.slides.add_slide(BLANK)
-    add_bg(slide)
-    add_rect(slide, 0, 2.5, 13.33, 0.06, BRAND)
-    add_textbox(slide, '사업구상 분석 리포트', 1, 2.8, 11.33, 1.2, size=36, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
-    add_textbox(slide, idea, 1, 4.1, 11.33, 0.6, size=18, color=MUTED, align=PP_ALIGN.CENTER)
-    add_textbox(slide, 'Claude Opus · 15-Section McKinsey/YC Analysis', 1, 4.8, 11.33, 0.5, size=11, color=MUTED, align=PP_ALIGN.CENTER)
+    s0 = prs.slides.add_slide(BLANK); add_bg(s0)
+    add_rect(s0, 0, 0, W, 0.07, BRAND)
+    add_rect(s0, W/2 - 0.5, 3.92, 1.0, 0.04, BRAND)
+    add_tb(s0, 'Pitch Deck', 1, 1.9, W-2, 0.42, sz=13, bold=True, col=ACCENTS[0], align=PP_ALIGN.CENTER)
+    add_tb(s0, idea, 1, 2.45, W-2, 1.3, sz=38, bold=True, col=TEXT, align=PP_ALIGN.CENTER)
+    add_tb(s0, 'Claude Opus  McKinsey/YC Level Analysis', 1, 4.1, W-2, 0.42, sz=11, col=MUTED, align=PP_ALIGN.CENTER)
 
-    # Parse sections
-    sections = []
-    lines_all = text.split('\n')
+    # ── Parse sections ──
+    SKIP = _re.compile(r'^\[(MARKET|DIFFICULTY|INVESTMENT|REVENUE|CHANNELS):')
+    secs = []
     cur = None
-    for line in lines_all:
+    for line in text.split('\n'):
         m = _re.match(r'^# (\d+)\.\s*(.+)', line)
         if m:
-            if cur: sections.append(cur)
+            if cur: secs.append(cur)
             cur = {'num': int(m.group(1)), 'title': m.group(2).strip(), 'lines': []}
         elif cur:
             cur['lines'].append(line)
-    if cur: sections.append(cur)
+    if cur: secs.append(cur)
 
-    SKIP_PAT = _re.compile(r'^\[(MARKET|DIFFICULTY|INVESTMENT|REVENUE|CHANNELS):')
-
-    for sec in sections:
-        icon = SEC_ICONS[sec['num'] - 1] if sec['num'] <= len(SEC_ICONS) else '📋'
-
-        slide = prs.slides.add_slide(BLANK)
-        add_bg(slide)
-
-        # Header bar
-        add_rect(slide, 0, 0, 13.33, 1.1, RGBColor(0x0d, 0x0d, 0x20))
-        # Accent line
-        add_rect(slide, 0, 1.1, 13.33, 0.04, BRAND)
-        # Section number badge
-        add_rect(slide, 0.4, 0.2, 0.55, 0.55, BRAND)
-        add_textbox(slide, str(sec['num']), 0.4, 0.22, 0.55, 0.5, size=14, bold=True, color=WHITE, align=PP_ALIGN.CENTER)
-        # Title
-        add_textbox(slide, f"{icon}  {sec['title']}", 1.1, 0.2, 10.5, 0.65, size=22, bold=True, color=WHITE)
-
-        # Content — collect bullets / paragraphs
-        content_lines = []
-        in_table = False
-        table_rows = []
-
-        def flush_table():
-            nonlocal in_table, table_rows
-            if not in_table or not table_rows: return
-            # Render table as text block
-            for r in table_rows:
-                content_lines.append('  '.join(r))
-            in_table = False; table_rows = []
-
-        for line in sec['lines']:
-            if SKIP_PAT.match(line): continue
-            if line.startswith('| '):
-                if _re.match(r'^\|[\s\-|:]+\|$', line): continue
-                in_table = True
-                table_rows.append([c.strip() for c in line.split('|')[1:-1]])
+    def parse_content(lines):
+        groups, kvs, bullets, grp = [], [], [], None
+        for ln in lines:
+            if SKIP.match(ln) or not ln.strip() or ln.strip() == '---':
                 continue
-            flush_table()
-            if line.startswith('## ') or line.startswith('### '):
-                content_lines.append('▶ ' + line.lstrip('#').strip())
-            elif _re.match(r'^[-*] ', line):
-                content_lines.append('• ' + line[2:])
-            elif line.strip() and not line.startswith('# ') and line != '---':
-                content_lines.append(line.strip())
-        flush_table()
-
-        # Write content into text box
-        MAX_LINES = 28
-        display = content_lines[:MAX_LINES]
-        if len(content_lines) > MAX_LINES:
-            display.append(f'… (+{len(content_lines)-MAX_LINES} 줄 생략)')
-
-        body_text = '\n'.join(display)
-        txb = slide.shapes.add_textbox(Inches(0.5), Inches(1.25), Inches(12.33), Inches(5.9))
-        txb.word_wrap = True
-        tf = txb.text_frame; tf.word_wrap = True
-        first = True
-        for line in display:
-            p = tf.paragraphs[0] if first else tf.add_paragraph()
-            first = False
-            run = p.add_run(); run.text = line
-            if line.startswith('▶ '):
-                run.font.size = Pt(12); run.font.bold = True; run.font.color.rgb = RGBColor(0x81, 0x8c, 0xf8)
-            elif line.startswith('• '):
-                run.font.size = Pt(10.5); run.font.color.rgb = GRAY
+            if ln.startswith('| '):
+                if _re.match(r'^\|[\s\-|:]+\|$', ln):
+                    continue
+                cells = [c.strip() for c in ln.split('|')[1:-1] if c.strip()]
+                if cells:
+                    bullets.append('  |  '.join(cells)[:85])
+                continue
+            if ln.startswith('## ') or ln.startswith('### '):
+                grp = {'heading': ln.lstrip('#').strip(), 'items': []}
+                groups.append(grp)
+            elif _re.match(r'^[-*] ', ln):
+                item = ln[2:].strip()
+                (grp['items'] if grp is not None else bullets).append(item)
+            elif ':' in ln and not ln.startswith('#'):
+                k, _, v = ln.partition(':')
+                k = k.strip().lstrip('-').strip(); v = v.strip()
+                if k and v and len(k) < 50:
+                    kvs.append({'k': k, 'v': v})
+                elif grp is not None:
+                    grp['items'].append(ln.strip())
+                else:
+                    bullets.append(ln.strip())
             else:
-                run.font.size = Pt(10); run.font.color.rgb = MUTED
+                t = ln.strip()
+                if t:
+                    (grp['items'] if grp is not None else bullets).append(t)
+        return groups, kvs, bullets
+
+    # Layout constants
+    BYX = 1.72                    # body area start y
+    CX1, CW1 = 0.45, 6.3         # left column x, width
+    CX2, CW2 = 7.38, 5.5         # right column x, width
+
+    def render_bullets(slide, items, x, y, w, ac, maxn=13):
+        cy = y
+        for it in (items or [])[:maxn]:
+            if cy > H - 0.35: break
+            add_rect(slide, x, cy+0.072, 0.065, 0.065, ac)
+            add_tb(slide, (it[:90]+'...' if len(it)>90 else it), x+0.14, cy, w-0.14, 0.31, sz=10.5, col=TEXT2)
+            cy += 0.33
+
+    def render_groups(slide, groups, x, y, w, ac, maxitems=4):
+        cy = y
+        for g in (groups or []):
+            if cy > H - 0.5: break
+            n = min(len(g.get('items') or []), maxitems)
+            ch = 0.33 + n * 0.27 + 0.1
+            add_rect(slide, x, cy, w, ch, CARD_BG, DIVIDER)
+            if g.get('heading'):
+                add_tb(slide, g['heading'][:55], x+0.14, cy+0.07, w-0.28, 0.22, sz=8.5, bold=True, col=ac)
+            iy = cy + 0.3
+            for it in (g.get('items') or [])[:maxitems]:
+                if iy > H - 0.3: break
+                add_rect(slide, x+0.14, iy+0.075, 0.055, 0.055, ac)
+                add_tb(slide, (it[:78]+'...' if len(it)>78 else it), x+0.25, iy, w-0.4, 0.26, sz=10, col=TEXT2)
+                iy += 0.27
+            cy += ch + 0.1
+
+    def render_kv(slide, kvs, x, y, w, ac, maxn=8):
+        cy = y
+        for kv in (kvs or [])[:maxn]:
+            if cy > H - 0.4: break
+            add_rect(slide, x, cy, w, 0.36, CARD_BG, DIVIDER)
+            add_tb(slide, kv['k'][:38], x+0.13, cy+0.05, w*0.44, 0.27, sz=9.5, col=MUTED)
+            v = (kv['v'][:46]+'...' if len(kv['v'])>46 else kv['v'])
+            add_tb(slide, v, x+w*0.46, cy+0.05, w*0.52, 0.27, sz=10, bold=True, col=ac)
+            cy += 0.42
+
+    def col_divider(slide, x, y, bh):
+        add_rect(slide, x, y, 0.02, bh, DIVIDER)
+
+    for i, sec in enumerate(secs):
+        ac = ACCENTS[i % len(ACCENTS)]
+        slide = prs.slides.add_slide(BLANK); add_bg(slide)
+        groups, kvs, bullets = parse_content(sec['lines'])
+        bh = H - BYX - 0.15
+
+        # Accent top bar
+        add_rect(slide, 0, 0, W, 0.07, ac)
+        # Header / body separator
+        add_rect(slide, 0, 1.65, W, 0.02, DIVIDER)
+        # Tag label (small caps accent)
+        add_tb(slide, f"SECTION {sec['num']}", 0.5, 0.19, 4, 0.3, sz=9, bold=True, col=ac)
+        # Section title
+        add_tb(slide, sec['title'], 0.5, 0.5, W-1.0, 1.12, sz=22, bold=True, col=TEXT)
+
+        if len(groups) >= 3:
+            render_groups(slide, groups[:2], CX1, BYX, CW1, ac, 4)
+            col_divider(slide, CX2-0.08, BYX, bh)
+            render_groups(slide, groups[2:4], CX2, BYX, CW2, ac, 4)
+        elif groups and kvs:
+            render_groups(slide, groups[:2], CX1, BYX, CW1, ac, 4)
+            col_divider(slide, CX2-0.08, BYX, bh)
+            render_kv(slide, kvs[:7], CX2, BYX, CW2, ac)
+        elif groups and bullets:
+            render_groups(slide, groups[:2], CX1, BYX, CW1, ac, 5)
+            col_divider(slide, CX2-0.08, BYX, bh)
+            render_bullets(slide, bullets[:11], CX2, BYX, CW2, ac)
+        elif groups:
+            render_groups(slide, groups, CX1, BYX, W-0.9, ac, 4)
+        elif kvs and bullets:
+            render_kv(slide, kvs[:7], CX1, BYX, CW1, ac)
+            col_divider(slide, CX2-0.08, BYX, bh)
+            render_bullets(slide, bullets[:11], CX2, BYX, CW2, ac)
+        elif kvs:
+            render_kv(slide, kvs[:9], CX1, BYX, W-0.9, ac)
+        else:
+            render_bullets(slide, bullets[:14], CX1, BYX, W-0.9, ac)
 
     buf = io.BytesIO()
-    prs.save(buf)
-    buf.seek(0)
+    prs.save(buf); buf.seek(0)
     return buf.read()
 
 
