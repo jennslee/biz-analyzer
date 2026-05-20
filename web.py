@@ -663,36 +663,44 @@ def md_to_pptx(text: str, idea: str, theme: str = "dark") -> bytes:
             cur['lines'].append(line)
     if cur: secs.append(cur)
 
+    def clean_md(s):
+        s = _re.sub(r'\*\*(.+?)\*\*', r'\1', s)
+        s = _re.sub(r'\*(.+?)\*', r'\1', s)
+        return s.strip()
+
     def parse_content(lines):
         groups, kvs, bullets, grp = [], [], [], None
         for ln in lines:
-            if SKIP.match(ln) or not ln.strip() or ln.strip() == '---':
+            stripped = ln.strip()
+            if SKIP.match(stripped) or not stripped or stripped == '---':
                 continue
-            if ln.startswith('| '):
-                if _re.match(r'^\|[\s\-|:]+\|$', ln):
+            # Catch ALL table lines: |...|, including |---|---|--- separators
+            if stripped.startswith('|'):
+                if _re.match(r'^\|[\s\-|:]+\|', stripped):  # separator row
                     continue
-                cells = [c.strip() for c in ln.split('|')[1:-1] if c.strip()]
+                cells = [clean_md(c) for c in stripped.split('|')[1:-1] if c.strip()]
                 if cells:
-                    bullets.append('  |  '.join(cells)[:85])
+                    (grp['items'] if grp is not None else bullets).append(
+                        '  |  '.join(cells)[:85])
                 continue
-            if ln.startswith('## ') or ln.startswith('### '):
-                grp = {'heading': ln.lstrip('#').strip(), 'items': []}
+            if stripped.startswith('## ') or stripped.startswith('### '):
+                grp = {'heading': clean_md(stripped.lstrip('#')), 'items': []}
                 groups.append(grp)
-            elif _re.match(r'^[-*] ', ln):
-                item = ln[2:].strip()
+            elif _re.match(r'^[-*] ', stripped):
+                item = clean_md(stripped[2:])
                 (grp['items'] if grp is not None else bullets).append(item)
-            elif ':' in ln and not ln.startswith('#'):
-                k, _, v = ln.partition(':')
-                k = k.strip().lstrip('-').strip(); v = v.strip()
+            elif ':' in stripped and not stripped.startswith('#'):
+                k, _, v = stripped.partition(':')
+                k = clean_md(k.lstrip('-')); v = clean_md(v)
                 if k and v and len(k) < 50:
                     kvs.append({'k': k, 'v': v})
                 elif grp is not None:
-                    grp['items'].append(ln.strip())
+                    grp['items'].append(clean_md(stripped)[:85])
                 else:
-                    bullets.append(ln.strip())
+                    bullets.append(clean_md(stripped)[:85])
             else:
-                t = ln.strip()
-                if t:
+                t = clean_md(stripped)
+                if t and not t.startswith('#'):
                     (grp['items'] if grp is not None else bullets).append(t)
         return groups, kvs, bullets
 
